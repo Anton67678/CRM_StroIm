@@ -42,6 +42,7 @@ class Object(Base):
     contractor_estimates = relationship("ContractorEstimate", back_populates="object", cascade="all, delete-orphan")
     extra_works = relationship("ExtraWork", back_populates="object", cascade="all, delete-orphan")
     material_requests = relationship("MaterialRequest", back_populates="object", cascade="all, delete-orphan")
+    acts = relationship("Act", back_populates="object", cascade="all, delete-orphan")
 
 
 # ============================================================
@@ -396,3 +397,20 @@ class FinancialPlan(Base):
     planned_income = Column(Float, default=0)
     planned_expenses = Column(Float, default=0)
     notes = Column(Text, default="")
+
+
+# ============================================================
+# ACTS (Акты выполненных работ)
+# ============================================================
+class Act(Base):
+    __tablename__ = "acts"
+    id = Column(Integer, primary_key=True, index=True)
+    object_id = Column(Integer, ForeignKey("objects.id", ondelete="CASCADE"), nullable=False)
+    act_number = Column(String, nullable=False)  # АКТ-001, АКТ-002 и т.д.
+    created_at = Column(String, default="")
+    status = Column(String, default="Выставлен")  # Выставлен, Оплачен
+    total_sum = Column(Float, default=0)
+    notes = Column(Text, default="")
+    signed_at = Column(String, nullable=True)
+
+    object = relationship("Object", back_populates="acts")

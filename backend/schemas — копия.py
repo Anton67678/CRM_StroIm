@@ -477,6 +477,7 @@ class ObjectFinancials(BaseModel):
     total_debit: float
     contractor_expenses: float
     material_expenses: float
+    acts_total: float
     total_credit: float
     profit: float
     margin_percent: float
@@ -501,5 +502,53 @@ class ObjectFullResponse(BaseModel):
     tasks: List[TaskResponse] = []
     contractor_estimates: List[ContractorEstimateResponse] = []
     financials: Optional[ObjectFinancials] = None
+    class Config:
+        from_attributes = True
+
+
+# ===== Акты выполненных работ =====
+class ActCreate(BaseModel):
+    object_id: int
+    notes: Optional[str] = None
+
+
+class ActUpdate(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ActItemResponse(BaseModel):
+    name: str
+    unit: str
+    quantity: float
+    price_per_unit: float  # Клиентская цена
+    total_price: float
+    source: str  # estimate или extra_work
+
+
+class ActResponse(BaseModel):
+    id: int
+    object_id: int
+    object_name: Optional[str] = None
+    act_number: str
+    created_at: str
+    status: str
+    total_sum: float
+    notes: Optional[str] = None
+    signed_at: Optional[str] = None
+    items: List[ActItemResponse] = []
+    class Config:
+        from_attributes = True
+
+
+class ActListItem(BaseModel):
+    id: int
+    act_number: str
+    object_id: int
+    object_name: str
+    created_at: str
+    status: str
+    total_sum: float
+    signed_at: Optional[str] = None
     class Config:
         from_attributes = True

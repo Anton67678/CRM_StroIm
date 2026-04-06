@@ -100,6 +100,7 @@ tr:hover{background:rgba(59,130,246,.04)}
   <button class="nav-btn" data-s="contractors">👷 Подрядчики</button>
   <button class="nav-btn" data-s="materials">📦 Материалы</button>
   <button class="nav-btn" data-s="tools">🔧 Инструменты</button>
+  <button class="nav-btn" data-s="acts">📄 Акты</button>
   <button class="nav-btn" data-s="finance">💰 Финансы</button>
 </nav>
 <div class="notif" id="notifBox"></div>
@@ -172,6 +173,23 @@ tr:hover{background:rgba(59,130,246,.04)}
 <div id="tools" class="section">
   <div class="card" style="margin-bottom:12px"><button class="btn" onclick="openToolModal()">+ Инструмент</button></div>
   <div id="toolsList"></div>
+</div>
+
+<!-- ACTS -->
+<div id="acts" class="section">
+  <div class="card" style="margin-bottom:12px">
+    <div class="btn-group">
+      <button class="btn" onclick="openActModal()">+ Создать акт</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="tabs" id="actsTabs">
+      <button class="tab active" data-t="actsAll">Все акты</button>
+      <button class="tab" data-t="actsByObject">По объекту</button>
+    </div>
+    <div id="actsAll" class="tab-c active"></div>
+    <div id="actsByObject" class="tab-c"></div>
+  </div>
 </div>
 
 <!-- FINANCE -->
@@ -388,11 +406,29 @@ tr:hover{background:rgba(59,130,246,.04)}
   <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveGenExp(this)">Сохранить</button><button class="btn btn-red" onclick="closeM('genExpModal')">Отмена</button></div>
 </div></div>
 
+<!-- Act Modal -->
+<div class="modal" id="actModal"><div class="modal-box" style="max-width:900px">
+  <div class="modal-head"><h3 id="actModalTitle">Создать акт</h3><button class="close-btn" onclick="closeM('actModal')">&times;</button></div>
+  <div id="actForm">
+    <div class="fg"><label>Объект *</label><select id="actObjectId"></select></div>
+    <div class="fg"><label>Заметки</label><textarea id="actNotes"></textarea></div>
+    <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveAct(this)">Создать</button><button class="btn btn-red" onclick="closeM('actModal')">Отмена</button></div>
+  </div>
+  <div id="actView" style="display:none">
+    <div id="actDetails"></div>
+    <div class="btn-group" style="margin-top:12px">
+      <button class="btn" onclick="exportAct()">📥 Экспорт Excel</button>
+      <button class="btn btn-red" onclick="deleteAct()">🗑 Удалить</button>
+      <button class="btn btn-outline" onclick="closeM('actModal')">Закрыть</button>
+    </div>
+  </div>
+</div></div>
+
 <script>
 'use strict';
 
-const BADGE_CLS={'pending':'b-yellow','paid':'b-green','cancelled':'b-red','To Do':'b-yellow','In Progress':'b-blue','Done':'b-green','planned':'b-yellow','in_progress':'b-blue','completed':'b-green','available':'b-green','in_use':'b-blue','maintenance':'b-yellow','broken':'b-red','delivered':'b-green','ordered':'b-yellow'};
-const BADGE_LBL={'pending':'Ожидает','paid':'Оплачено','cancelled':'Отменено','To Do':'К исполнению','In Progress':'В работе','Done':'Выполнено','planned':'Запланировано','in_progress':'В работе','completed':'Выполнено','available':'Доступен','in_use':'Используется','maintenance':'ТО','broken':'Сломан','delivered':'Доставлено','ordered':'Заказано'};
+const BADGE_CLS={'pending':'b-yellow','paid':'b-green','cancelled':'b-red','To Do':'b-yellow','In Progress':'b-blue','Done':'b-green','planned':'b-yellow','in_progress':'b-blue','completed':'b-green','available':'b-green','in_use':'b-blue','maintenance':'b-yellow','broken':'b-red','delivered':'b-green','ordered':'b-yellow','Выставлен':'b-blue','Оплачен':'b-green','Акт':'b-purple'};
+const BADGE_LBL={'pending':'Ожидает','paid':'Оплачено','cancelled':'Отменено','To Do':'К исполнению','In Progress':'В работе','Done':'Выполнено','planned':'Запланировано','in_progress':'В работе','completed':'Выполнено','available':'Доступен','in_use':'Используется','maintenance':'ТО','broken':'Сломан','delivered':'Доставлено','ordered':'Заказано','Выставлен':'Выставлен','Оплачен':'Оплачен','Акт':'Акт'};
 let D={objects:[],contractors:[],works:[],materials:[],purchases:[],tools:[],contrEstimates:[],worksCombined:[]};
 let suppliers=[], matRequests=[], matReqItemsData=[], catalog={items:[],total_items:0,total_suppliers:0};
 let _saving=false;
@@ -439,6 +475,7 @@ async function loadSection(s){
     else if(s==='contractors'){await loadAll();await loadContrEstimates();await loadWorksCombined();renderContractors();renderContrEstimates()}
     else if(s==='materials'){await loadAll();await loadSuppliers();await loadMatRequests();renderSuppliers();renderMatRequests()}
     else if(s==='tools'){await loadAll();renderTools()}
+    else if(s==='acts'){await loadAll();loadActs()}
     else if(s==='finance')await loadFinance();
   }catch(e){console.error(e)}
 }
@@ -766,7 +803,7 @@ async function loadFinance(){
     <div class="stat card"><div class="stat-val" style="color:var(--red)">${fmt(f.total_credit)}</div><div class="stat-lbl">Кредит (расходы)</div><div style="font-size:11px;color:var(--sec);margin-top:4px">👷 ${fmt(f.total_contractor)} + 🧱 ${fmt(f.total_material)} + 📋 ${fmt(f.total_general)}</div></div>
     <div class="stat card"><div class="stat-val" style="color:var(--pri)">${fmt(f.total_profit)}</div><div class="stat-lbl">Прибыль</div></div>
     <div class="stat card"><div class="stat-val" style="color:var(--purple)">${f.total_debit>0?((f.total_profit/f.total_debit)*100).toFixed(1):0}%</div><div class="stat-lbl">Маржа</div></div>`;
-  $('finByObjects').innerHTML=(f.by_objects||[]).length?`<table><thead><tr><th>Объект</th><th>Доход</th><th>Работы</th><th>Материалы</th><th>Прибыль</th><th>Маржа</th></tr></thead><tbody>${f.by_objects.map(o=>`<tr><td><b>${esc(o.object_name)}</b><br><small style="color:var(--sec)">${esc(o.client_name)}</small></td><td style="color:var(--green)">${fmt(o.total_debit)}</td><td style="color:var(--red)">${fmt(o.contractor_expenses)}</td><td style="color:var(--red)">${fmt(o.material_expenses)}</td><td style="color:var(--pri)">${fmt(o.profit)}</td><td>${o.margin_percent}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Нет данных</div>';
+  $('finByObjects').innerHTML=(f.by_objects||[]).length?`<table><thead><tr><th>Объект</th><th>Доход</th><th>Работы</th><th>Материалы</th><th>Акты</th><th>Прибыль</th><th>Маржа</th></tr></thead><tbody>${f.by_objects.map(o=>`<tr><td><b>${esc(o.object_name)}</b><br><small style="color:var(--sec)">${esc(o.client_name)}</small></td><td style="color:var(--green)">${fmt(o.total_debit)}</td><td style="color:var(--red)">${fmt(o.contractor_expenses)}</td><td style="color:var(--red)">${fmt(o.material_expenses)}</td><td style="color:var(--orange)">${fmt(o.acts_total||0)}</td><td style="color:var(--pri)">${fmt(o.profit)}</td><td>${o.margin_percent}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Нет данных</div>';
   const cm=today().slice(0,7);$('planMonth').value=cm;$('planIncome').value=f.planned_income||0;$('planExpenses').value=f.planned_expenses||0;$('planProfit').textContent=fmt(f.planned_profit||0);
   $('contrDebts').innerHTML=(f.contractor_debts||[]).length?f.contractor_debts.map(d=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd)"><span>👷 ${esc(d.name)}</span><b style="color:var(--red)">${fmt(d.debt)}</b></div>`).join(''):'<div class="empty">Нет долгов</div>';
   $('clientDebts').innerHTML=(f.client_debts||[]).length?f.client_debts.map(d=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd)"><span>💰 ${esc(d.client_name)} (${esc(d.object_name)})</span><b style="color:var(--green)">${fmt(d.debt)}</b></div>`).join(''):'<div class="empty">Нет долгов</div>';
@@ -777,6 +814,126 @@ async function savePlan(){const d={month:$('planMonth').value,planned_income:+$(
 function openGenExpModal(){$('genExpAmount').value='';$('genExpDesc').value='';$('genExpDate').value=today();openM('genExpModal')}
 async function saveGenExp(btn){guardSave(btn,async()=>{const d={category:$('genExpCat').value,description:$('genExpDesc').value.trim(),amount:+$('genExpAmount').value,date:$('genExpDate').value};if(!d.amount){notify('Сумма',false);return}await api('/general-expenses/','POST',d);closeM('genExpModal');notify('Сохранено');loadFinance()})}
 async function deleteGenExp(id){if(!confirm('Удалить?'))return;await api(`/general-expenses/${id}`,'DELETE');notify('Удалено');loadFinance()}
+
+// ACTS
+let currentActId = null;
+
+async function loadActs(){
+  const acts = await api('/acts/');
+  const objects = D.objects;
+  
+  // Все акты
+  $('actsAll').innerHTML = acts.length ? `
+    <table><thead><tr><th>№</th><th>Объект</th><th>Дата</th><th>Сумма</th><th>Статус</th><th></th></tr></thead>
+    <tbody>${acts.map(a => `<tr>
+      <td><b>${esc(a.act_number)}</b></td>
+      <td>${esc(a.object_name)}</td>
+      <td>${esc(a.created_at)}</td>
+      <td><b>${fmt(a.total_sum)}</b></td>
+      <td>${badge(a.status)}</td>
+      <td class="btn-group">
+        <button class="btn btn-sm btn-outline" onclick="viewAct(${a.id})">👁</button>
+        <button class="btn btn-sm" onclick="exportActDirect(${a.id})">📥</button>
+      </td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">Нет актов</div>';
+  
+  // По объекту
+  const byObj = {};
+  acts.forEach(a => {
+    if (!byObj[a.object_id]) byObj[a.object_id] = { name: a.object_name, acts: [], total: 0 };
+    byObj[a.object_id].acts.push(a);
+    byObj[a.object_id].total += a.total_sum;
+  });
+  $('actsByObject').innerHTML = Object.keys(byObj).length ? `
+    <table><thead><tr><th>Объект</th><th>Кол-во актов</th><th>Общая сумма</th></tr></thead>
+    <tbody>${Object.entries(byObj).map(([id, d]) => `<tr>
+      <td><b>${esc(d.name)}</b></td>
+      <td>${d.acts.length}</td>
+      <td style="color:var(--pri)"><b>${fmt(d.total)}</b></td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">Нет данных</div>';
+}
+
+function openActModal(){
+  $('actForm').style.display = 'block';
+  $('actView').style.display = 'none';
+  $('actModalTitle').textContent = 'Создать акт';
+  $('actObjectId').innerHTML = D.objects.map(o => `<option value="${o.id}">${esc(o.name)} (${esc(o.client_name)})</option>`).join('');
+  $('actNotes').value = '';
+  currentActId = null;
+  openM('actModal');
+}
+
+async function saveAct(btn){
+  guardSave(btn, async () => {
+    const objectId = +$('actObjectId').value;
+    if (!objectId) { notify('Выберите объект', false); return; }
+    const res = await api('/acts/', 'POST', { object_id: objectId, notes: $('actNotes').value.trim() });
+    closeM('actModal');
+    notify('Акт создан: ' + res.act_number);
+    loadActs();
+  });
+}
+
+async function viewAct(id){
+  const act = await api(`/acts/${id}`);
+  currentActId = id;
+  $('actForm').style.display = 'none';
+  $('actView').style.display = 'block';
+  $('actModalTitle').textContent = act.act_number;
+  
+  let itemsHtml = act.items.length ? `
+    <table><thead><tr><th>№</th><th>Наименование</th><th>Ед.изм</th><th>Объём</th><th>Цена</th><th>Сумма</th></tr></thead>
+    <tbody>${act.items.map((it, i) => `<tr>
+      <td>${i + 1}</td>
+      <td>${esc(it.name)}</td>
+      <td>${esc(it.unit)}</td>
+      <td>${it.quantity}</td>
+      <td>${fmt(it.price_per_unit)}</td>
+      <td><b>${fmt(it.total_price)}</b></td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">Нет позиций</div>';
+  
+  $('actDetails').innerHTML = `
+    <div style="margin-bottom:12px">
+      <div class="fr">
+        <div><strong>Объект:</strong> ${esc(act.object_name)}</div>
+        <div><strong>Дата:</strong> ${esc(act.created_at)}</div>
+        <div><strong>Статус:</strong> <select id="actStatusSelect" onchange="changeActStatus()">
+          <option value="Выставлен" ${act.status==='Выставлен'?'selected':''}>Выставлен</option>
+          <option value="Оплачен" ${act.status==='Оплачен'?'selected':''}>Оплачен</option>
+        </select></div>
+      </div>
+    </div>
+    ${itemsHtml}
+    <div style="margin-top:12px;text-align:right;font-size:16px"><strong>ИТОГО: ${fmt(act.total_sum)}</strong></div>
+    ${act.notes ? `<div style="margin-top:8px;color:var(--sec)"><strong>Заметки:</strong> ${esc(act.notes)}</div>` : ''}
+  `;
+  openM('actModal');
+}
+
+async function changeActStatus(){
+  if (!currentActId) return;
+  const status = $('actStatusSelect').value;
+  await api(`/acts/${currentActId}`, 'PUT', { status });
+  notify('Статус обновлён: ' + status);
+  loadActs();
+}
+
+function exportAct(){
+  if (currentActId) window.open(`/acts/${currentActId}/excel`, '_blank');
+}
+
+function exportActDirect(id){
+  window.open(`/acts/${id}/excel`, '_blank');
+}
+
+async function deleteAct(){
+  if (!currentActId) return;
+  if (!confirm('Удалить акт?')) return;
+  await api(`/acts/${currentActId}`, 'DELETE');
+  notify('Акт удалён');
+  closeM('actModal');
+  loadActs();
+}
 
 // INIT
 document.addEventListener('DOMContentLoaded',async()=>{try{await Promise.all([loadDashboard(),loadAll()])}catch(e){console.error(e)}});
