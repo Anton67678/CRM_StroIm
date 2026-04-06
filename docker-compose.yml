@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:15
+    container_name: crm_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: crm_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_:/var/lib/postgresql/data
+    networks:
+      - crm_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d crm_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: crm_api
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - crm_network
+    volumes:
+      - ./backend:/app
+
+volumes:
+  postgres_:
+
+networks:
+  crm_network:
+    driver: bridge

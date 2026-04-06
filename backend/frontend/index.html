@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRM Repair System</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#1f2937;--sec:#6b7280;--pri:#3b82f6;--brd:#e5e7eb;--sh:0 2px 8px rgba(0,0,0,.08);--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--purple:#8b5cf6;--orange:#f97316}
+@media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--sec:#94a3b8;--brd:#334155;--sh:0 2px 8px rgba(0,0,0,.3)}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.container{max-width:1500px;margin:0 auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+h1{font-size:22px}h2{font-size:18px;margin-bottom:12px}h3{font-size:15px;margin-bottom:8px}
+nav{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--brd);padding-bottom:8px;flex-wrap:wrap}
+.nav-btn{background:none;border:none;padding:8px 14px;cursor:pointer;color:var(--sec);border-radius:6px;font-weight:600;font-size:13px;transition:.2s}
+.nav-btn:hover{background:rgba(59,130,246,.1);color:var(--pri)}
+.nav-btn.active{background:var(--pri);color:#fff}
+.section{display:none}.section.active{display:block;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border-radius:10px;padding:16px;box-shadow:var(--sh);margin-bottom:12px}
+.grid{display:grid;gap:12px}.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.btn{background:var(--pri);color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{filter:brightness(1.1)}.btn:disabled{opacity:.5;cursor:not-allowed}.btn-sm{padding:4px 10px;font-size:12px}
+.btn-green{background:var(--green)}.btn-red{background:var(--red)}.btn-yellow{background:var(--yellow);color:#000}.btn-purple{background:var(--purple)}.btn-orange{background:var(--orange)}
+.btn-outline{background:transparent;border:1px solid var(--brd);color:var(--text)}
+.btn-outline:hover{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn-group{display:flex;gap:4px;flex-wrap:wrap}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--brd);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 2px rgba(59,130,246,.15)}
+textarea{min-height:60px;resize:vertical}
+label{display:block;margin-bottom:3px;font-weight:600;font-size:12px;color:var(--sec)}
+.fg{margin-bottom:10px}.fr{display:flex;gap:10px;flex-wrap:wrap}.fr>.fg{flex:1;min-width:150px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--brd)}
+th{background:var(--bg);font-weight:700;font-size:12px;text-transform:uppercase;color:var(--sec)}
+tr:hover{background:rgba(59,130,246,.04)}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;display:inline-block}
+.b-green{background:rgba(16,185,129,.15);color:#047857}.b-red{background:rgba(239,68,68,.15);color:#dc2626}
+.b-yellow{background:rgba(245,158,11,.15);color:#b45309}.b-blue{background:rgba(59,130,246,.15);color:#2563eb}
+.b-purple{background:rgba(139,92,246,.15);color:#6d28d9}.b-orange{background:rgba(249,115,22,.15);color:#c2410c}
+.stat{text-align:center;padding:16px;border-radius:8px}
+.stat-val{font-size:24px;font-weight:800}.stat-lbl{font-size:12px;color:var(--sec);margin-top:2px}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;justify-content:center;align-items:flex-start;padding:40px 16px;overflow-y:auto}
+.modal.active{display:flex}
+.modal-box{background:var(--card);padding:20px;border-radius:12px;max-width:800px;width:100%;box-shadow:var(--sh)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-head h3{margin:0}
+.close-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--sec);padding:0 4px}
+.tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{background:none;border:none;padding:6px 12px;cursor:pointer;color:var(--sec);border-radius:6px;font-size:12px;font-weight:600}
+.tab.active{background:var(--pri);color:#fff}
+.tab-c{display:none}.tab-c.active{display:block}
+.empty{text-align:center;padding:30px;color:var(--sec);font-size:14px}
+.notif{position:fixed;top:16px;right:16px;z-index:2000;display:flex;flex-direction:column;gap:8px}
+.notif-item{padding:10px 16px;border-radius:8px;color:#fff;font-size:13px;animation:slide .3s;max-width:320px}
+.notif-ok{background:var(--green)}.notif-err{background:var(--red)}
+@keyframes slide{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;background:var(--bg);border:1px solid var(--brd);margin:2px}
+.chip .x{cursor:pointer;font-weight:700;color:var(--red)}
+.autocomplete{position:relative}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--brd);border-radius:6px;max-height:200px;overflow-y:auto;z-index:100;display:none;box-shadow:var(--sh)}
+.autocomplete-list.show{display:block}
+.autocomplete-item{padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--brd)}
+.autocomplete-item:hover{background:rgba(59,130,246,.1)}
+.autocomplete-item small{color:var(--sec)}
+.estimate-table{width:100%;border-collapse:collapse;margin:10px 0}
+.estimate-table th{background:var(--bg);padding:8px;text-align:left;font-size:12px;text-transform:uppercase;color:var(--sec);border:1px solid var(--brd)}
+.estimate-table td{padding:6px 8px;border:1px solid var(--brd);font-size:13px}
+.estimate-table input{border:none;background:transparent;padding:4px;font-size:13px;width:100%}
+.estimate-table input:focus{outline:none;background:rgba(59,130,246,.05)}
+.estimate-table .del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:4px}
+.estimate-table tfoot td{font-weight:700;background:var(--bg)}
+.ac-drop{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.15);max-height:200px;overflow-y:auto;z-index:1000}
+.ac-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
+.ac-item:hover{background:#e3f2fd}
+.checkbox-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--brd);border-radius:6px;margin-bottom:6px}
+.checkbox-item:hover{background:rgba(59,130,246,.04)}
+.checkbox-item input[type=checkbox]{width:18px;height:18px;cursor:pointer;flex-shrink:0}
+.checkbox-item .item-info{flex:1}
+.checkbox-item .item-name{font-size:13px;font-weight:600}
+.checkbox-item .item-details{font-size:11px;color:var(--sec)}
+.checkbox-item .price-input{width:120px;flex-shrink:0}
+.catalog-stats{display:flex;gap:16px;align-items:center;font-size:14px;color:var(--sec);margin-bottom:12px}
+.catalog-stats strong{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>🏗 CRM Repair</h1>
+  <div class="btn-group">
+    <button class="btn" onclick="refreshAll()">🔄</button>
+    <button class="btn btn-green" onclick="openObjModal()">+ Объект</button>
+  </div>
+</header>
+<nav id="mainNav">
+  <button class="nav-btn active" data-s="dashboard">📊 Дашборд</button>
+  <button class="nav-btn" data-s="objects">🏢 Объекты</button>
+  <button class="nav-btn" data-s="contractors">👷 Подрядчики</button>
+  <button class="nav-btn" data-s="materials">📦 Материалы</button>
+  <button class="nav-btn" data-s="tools">🔧 Инструменты</button>
+  <button class="nav-btn" data-s="acts">📄 Акты</button>
+  <button class="nav-btn" data-s="finance">💰 Финансы</button>
+</nav>
+<div class="notif" id="notifBox"></div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="section active">
+  <div class="grid g4" id="dashStats"></div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>📅 Задачи на сегодня</h3><div id="dashToday"></div></div>
+    <div class="card"><h3>⚠️ Просроченные</h3><div id="dashOverdue"></div></div>
+    <div class="card"><h3>📋 На неделю</h3><div id="dashWeek"></div></div>
+    <div class="card"><h3>🏢 Активные объекты</h3><div id="dashObjects"></div></div>
+  </div>
+</div>
+
+<!-- OBJECTS -->
+<div id="objects" class="section">
+  <div class="card" style="margin-bottom:12px">
+    <div class="fr">
+      <div class="fg"><input id="objSearch" placeholder="Поиск..."></div>
+      <div class="fg" style="max-width:200px">
+        <select id="objStatusFilter"><option value="">Все</option>
+          <option>Заявка</option><option>Замер</option><option>Смета</option><option>Договор</option>
+          <option>Черновые</option><option>Чистовые</option><option>Сдача</option><option>Гарантия</option><option>Готово</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div id="objectsList"></div>
+</div>
+
+<!-- CONTRACTORS -->
+<div id="contractors" class="section">
+  <div class="card" style="margin-bottom:12px">
+    <div class="btn-group">
+      <button class="btn" onclick="openContrModal()">+ Подрядчик</button>
+      <button class="btn btn-purple" onclick="openContrEstModal()">+ Смета подрядчика</button>
+      <button class="btn btn-orange" onclick="openExtraWorkModal()">+ Доп. работа</button>
+    </div>
+  </div>
+  <div class="tabs" id="contrTabs">
+    <button class="tab active" data-t="contrList">Подрядчики</button>
+    <button class="tab" data-t="contrEstList">Сметы подрядчиков</button>
+    <button class="tab" data-t="worksCombList">Работы</button>
+  </div>
+  <div id="contrList" class="tab-c active"></div>
+  <div id="contrEstList" class="tab-c"></div>
+  <div id="worksCombList" class="tab-c"></div>
+</div>
+
+<!-- MATERIALS -->
+<div id="materials" class="section">
+  <div class="card" style="margin-bottom:12px">
+    <div class="btn-group">
+      <button class="btn" onclick="openSupplierModal()">+ Поставщик</button>
+      <button class="btn btn-yellow" onclick="openMatReqModal()">+ Заявка на материалы</button>
+    </div>
+  </div>
+  <div class="tabs" id="matTabs">
+    <button class="tab active" data-t="supplierList">Поставщики</button>
+    <button class="tab" data-t="matPurch">Заявки</button>
+    <button class="tab" data-t="catalogList">Справочник</button>
+  </div>
+  <div id="supplierList" class="tab-c active"></div>
+  <div id="matPurch" class="tab-c"></div>
+  <div id="catalogList" class="tab-c"></div>
+</div>
+
+<!-- TOOLS -->
+<div id="tools" class="section">
+  <div class="card" style="margin-bottom:12px"><button class="btn" onclick="openToolModal()">+ Инструмент</button></div>
+  <div id="toolsList"></div>
+</div>
+
+<!-- ACTS -->
+<div id="acts" class="section">
+  <div class="card" style="margin-bottom:12px">
+    <div class="btn-group">
+      <button class="btn" onclick="openActModal()">+ Создать акт</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="tabs" id="actsTabs">
+      <button class="tab active" data-t="actsAll">Все акты</button>
+      <button class="tab" data-t="actsByObject">По объекту</button>
+    </div>
+    <div id="actsAll" class="tab-c active"></div>
+    <div id="actsByObject" class="tab-c"></div>
+  </div>
+</div>
+
+<!-- FINANCE -->
+<div id="finance" class="section">
+  <div class="grid g4" id="finStats"></div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>📊 По объектам</h3><div id="finByObjects"></div></div>
+    <div class="card">
+      <h3>📅 План на месяц</h3>
+      <div class="fr"><div class="fg"><label>Месяц</label><input type="month" id="planMonth"></div></div>
+      <div class="fr">
+        <div class="fg"><label>Доход</label><input type="number" id="planIncome" placeholder="0"></div>
+        <div class="fg"><label>Расходы</label><input type="number" id="planExpenses" placeholder="0"></div>
+      </div>
+      <button class="btn" onclick="savePlan()">Сохранить</button>
+      <div style="margin-top:10px;font-size:13px">Прибыль: <strong id="planProfit">0</strong></div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3>💸 Долги подрядчикам</h3><div id="contrDebts"></div></div>
+    <div class="card"><h3>💰 Долги клиентов</h3><div id="clientDebts"></div></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>📋 Общие расходы</h3>
+    <div class="btn-group" style="margin-bottom:8px"><button class="btn btn-sm" onclick="openGenExpModal()">+ Расход</button></div>
+    <div id="genExpList"></div>
+  </div>
+</div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Object Modal -->
+<div class="modal" id="objModal"><div class="modal-box">
+  <div class="modal-head"><h3 id="objModalTitle">Новый объект</h3><button class="close-btn" onclick="closeM('objModal')">&times;</button></div>
+  <input type="hidden" id="objEditId">
+  <div class="fg"><label>Адрес объекта *</label><input id="objName"></div>
+  <div class="fr"><div class="fg"><label>ФИО клиента *</label><input id="objClientName"></div><div class="fg"><label>Телефон *</label><input id="objClientPhone"></div></div>
+  <div class="fr"><div class="fg"><label>Email</label><input id="objClientEmail"></div><div class="fg"><label>Адрес клиента</label><input id="objClientAddr"></div></div>
+  <div class="fr"><div class="fg"><label>Статус</label><select id="objStatus"><option>Заявка</option><option>Замер</option><option>Смета</option><option>Договор</option><option>Черновые</option><option>Чистовые</option><option>Сдача</option><option>Гарантия</option><option>Готово</option></select></div></div>
+  <div class="fg"><label>Заметки</label><textarea id="objNotes"></textarea></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveObject(this)">Сохранить</button><button class="btn btn-red" onclick="closeM('objModal')">Отмена</button></div>
+</div></div>
+
+<!-- Contractor Modal -->
+<div class="modal" id="contrModal"><div class="modal-box">
+  <div class="modal-head"><h3 id="contrModalTitle">Подрядчик</h3><button class="close-btn" onclick="closeM('contrModal')">&times;</button></div>
+  <input type="hidden" id="contrEditId">
+  <div class="fr"><div class="fg"><label>Имя *</label><input id="contrName"></div><div class="fg"><label>Телефон *</label><input id="contrPhone"></div></div>
+  <div class="fg"><label>Специализация</label><input id="contrSpec"></div>
+  <div class="fg"><label>Заметки</label><textarea id="contrNotes"></textarea></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveContractor(this)">Сохранить</button><button class="btn btn-red" onclick="closeM('contrModal')">Отмена</button></div>
+</div></div>
+
+<!-- Contractor Estimate Modal (НОВАЯ — с выбором позиций из сметы объекта) -->
+<div class="modal" id="contrEstModal"><div class="modal-box" style="max-width:950px">
+  <div class="modal-head"><h3 id="contrEstModalTitle">Смета подрядчика</h3><button class="close-btn" onclick="closeM('contrEstModal')">&times;</button></div>
+  <input type="hidden" id="contrEstEditId">
+  <div class="fr">
+    <div class="fg"><label>Объект *</label><select id="contrEstObject" onchange="loadEstItemsForSelection()"></select></div>
+    <div class="fg"><label>Подрядчик *</label><select id="contrEstContractor"></select></div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label>Название</label><input id="contrEstName" placeholder="Автоматически из объекта"></div>
+    <div class="fg"><label>Статус</label><select id="contrEstStatus"><option value="planned">Запланировано</option><option value="in_progress">В работе</option><option value="completed">Выполнено</option><option value="paid">Оплачено</option></select></div>
+  </div>
+  <div class="fg"><label>Заметки</label><textarea id="contrEstNotes" rows="2"></textarea></div>
+  <div id="contrEstItemsContainer"><p style="color:var(--sec);font-size:13px">Выберите объект чтобы увидеть позиции сметы</p></div>
+  <div id="contrEstTotalBlock" style="font-size:16px;font-weight:700;margin:12px 0;display:none">Итого подрядчик: <span id="contrEstTotalValue">0 ₽</span></div>
+  <div class="btn-group" style="margin-top:12px">
+    <button class="btn" onclick="saveContrEst(this)">Сохранить</button>
+    <button class="btn btn-purple" onclick="exportContrEstExcel()">📊 Excel</button>
+    <button class="btn btn-red" onclick="closeM('contrEstModal')">Отмена</button>
+  </div>
+</div></div>
+
+<!-- Contractor Estimate DETAIL Modal (при клике в Работах) -->
+<div class="modal" id="contrEstDetailModal"><div class="modal-box" style="max-width:900px">
+  <div class="modal-head"><h3 id="contrEstDetailTitle">Смета</h3><button class="close-btn" onclick="closeM('contrEstDetailModal')">&times;</button></div>
+  <div id="contrEstDetailContent"></div>
+</div></div>
+
+<!-- Extra Work Modal -->
+<div class="modal" id="extraWorkModal"><div class="modal-box">
+  <div class="modal-head"><h3>Доп. работа (вне сметы)</h3><button class="close-btn" onclick="closeM('extraWorkModal')">&times;</button></div>
+  <p style="color:var(--orange);font-size:12px;margin-bottom:12px">⚠️ Доп. работы — работы вне сметы подрядчика</p>
+  <div class="fg"><label>Объект *</label><select id="ewObject"></select></div>
+  <div class="fg"><label>Название *</label><input id="ewName" placeholder="Демонтаж перегородки"></div>
+  <div class="fg"><label>Описание</label><textarea id="ewDesc"></textarea></div>
+  <div class="fg"><label>Подрядчик</label><input id="ewContractor"></div>
+  <div class="fr">
+    <div class="fg"><label>Кол-во</label><input type="number" id="ewQty" value="1"></div>
+    <div class="fg"><label>Ед. изм.</label><input id="ewUnit" value="усл."></div>
+    <div class="fg"><label>Цена</label><input type="number" id="ewPrice"></div>
+  </div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn btn-orange" onclick="saveExtraWork(this)">Добавить</button><button class="btn btn-red" onclick="closeM('extraWorkModal')">Отмена</button></div>
+</div></div>
+
+<!-- Estimate Upload -->
+<div class="modal" id="estModal"><div class="modal-box">
+  <div class="modal-head"><h3>Загрузить смету</h3><button class="close-btn" onclick="closeM('estModal')">&times;</button></div>
+  <input type="hidden" id="estObjId">
+  <div class="fg"><label>Файл Excel</label><input type="file" id="estFile" accept=".xlsx,.xls,.pdf"></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="uploadEstimate(this)">Загрузить</button><button class="btn btn-red" onclick="closeM('estModal')">Отмена</button></div>
+</div></div>
+
+<!-- Payment Modal -->
+<div class="modal" id="payModal"><div class="modal-box">
+  <div class="modal-head"><h3 id="payModalTitle">Платёж</h3><button class="close-btn" onclick="closeM('payModal')">&times;</button></div>
+  <input type="hidden" id="payEditId"><input type="hidden" id="payObjId">
+  <div class="fr"><div class="fg"><label>Сумма *</label><input type="number" id="payAmount"></div><div class="fg"><label>Дата</label><input type="date" id="payDate"></div></div>
+  <div class="fg"><label>Описание</label><textarea id="payDesc"></textarea></div>
+  <div class="fg"><label>Статус</label><select id="payStatus"><option value="pending">Ожидает</option><option value="paid">Оплачено</option></select></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="savePayment(this)">Сохранить</button><button class="btn btn-red" onclick="closeM('payModal')">Отмена</button></div>
+</div></div>
+
+<!-- Task Modal -->
+<div class="modal" id="taskModal"><div class="modal-box">
+  <div class="modal-head"><h3 id="taskModalTitle">Задача</h3><button class="close-btn" onclick="closeM('taskModal')">&times;</button></div>
+  <input type="hidden" id="taskEditId"><input type="hidden" id="taskObjId">
+  <div class="fg"><label>Название *</label><input id="taskTitle"></div>
+  <div class="fg"><label>Описание</label><textarea id="taskDesc"></textarea></div>
+  <div class="fr"><div class="fg"><label>Дедлайн</label><input type="date" id="taskDeadline"></div><div class="fg"><label>Статус</label><select id="taskStatus"><option>To Do</option><option>In Progress</option><option>Done</option></select></div></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveTask(this)">Сохранить</button><button class="btn btn-red" onclick="closeM('taskModal')">Отмена</button></div>
+</div></div>
+
+<!-- Communication Modal -->
+<div class="modal" id="commModal"><div class="modal-box">
+  <div class="modal-head"><h3>Запись</h3><button class="close-btn" onclick="closeM('commModal')">&times;</button></div>
+  <input type="hidden" id="commObjId">
+  <div class="fr"><div class="fg"><label>Тип</label><select id="commType"><option>Звонок</option><option>Встреча</option><option>Письмо</option><option>Сообщение</option></select></div><div class="fg"><label>Дата</label><input type="date" id="commDate"></div></div>
+  <div class="fg"><label>Описание</label><textarea id="commDesc"></textarea></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveComm(this)">Сохранить</button><button class="btn btn-red" onclick="closeM('commModal')">Отмена</button></div>
+</div></div>
+
+<!-- Document Modal -->
+<div class="modal" id="docModal"><div class="modal-box">
+  <div class="modal-head"><h3>Документ</h3><button class="close-btn" onclick="closeM('docModal')">&times;</button></div>
+  <input type="hidden" id="docObjId">
+  <div class="fg"><label>Тип</label><select id="docType"><option value="act">Акт</option><option value="contract">Договор</option><option value="estimate">Смета</option><option value="other">Другое</option></select></div>
+  <div class="fg"><label>Файл</label><input type="file" id="docFile"></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="uploadDoc(this)">Загрузить</button><button class="btn btn-red" onclick="closeM('docModal')">Отмена</button></div>
+</div></div>
+
+<!-- Supplier Modal -->
+<div class="modal" id="supplierModal"><div class="modal-box">
+  <div class="modal-head"><h3 id="supplierModalTitle">Поставщик</h3><button class="close-btn" onclick="closeM('supplierModal')">&times;</button></div>
+  <input type="hidden" id="supplierEditId">
+  <div class="fg"><label>Название *</label><input id="supplierName"></div>
+  <div class="fr"><div class="fg"><label>Телефон</label><input id="supplierPhone"></div><div class="fg"><label>Email</label><input id="supplierEmail"></div></div>
+  <div class="fg"><label>Адрес</label><input id="supplierAddress"></div>
+  <div class="fg"><label>Заметки</label><textarea id="supplierNotes"></textarea></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveSupplier(this)">Сохранить</button><button class="btn btn-red" onclick="closeM('supplierModal')">Отмена</button></div>
+</div></div>
+
+<!-- Supplier Detail Modal -->
+<div class="modal" id="supplierDetailModal"><div class="modal-box" style="max-width:900px">
+  <div class="modal-head"><h3 id="supplierDetailTitle">Поставщик</h3><button class="close-btn" onclick="closeM('supplierDetailModal')">&times;</button></div>
+  <input type="hidden" id="supplierDetailId">
+  <div id="supplierDetailInfo" style="margin-bottom:12px"></div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3 style="margin:0">📁 Файлы расценок</h3>
+      <div class="btn-group">
+        <input type="file" id="supplierPriceFileInput" accept=".xlsx,.xls" style="display:none" onchange="uploadSupplierPriceFile()">
+        <button class="btn btn-sm btn-green" onclick="$('supplierPriceFileInput').click()">📎 Загрузить Excel</button>
+      </div>
+    </div>
+    <div id="supplierPriceFiles"></div>
+  </div>
+</div></div>
+
+<!-- Material Request Modal -->
+<div class="modal" id="matReqModal"><div class="modal-box" style="max-width:950px">
+  <div class="modal-head"><h3 id="matReqModalTitle">Заявка на материалы</h3><button class="close-btn" onclick="closeM('matReqModal')">&times;</button></div>
+  <input type="hidden" id="matReqEditId">
+  <div class="fr">
+    <div class="fg"><label>Поставщик *</label><select id="matReqSupplier" onchange="matReqSupplierChanged()"><option value="">Выберите</option></select></div>
+    <div class="fg"><label>Объект</label><select id="matReqObject"><option value="">Без объекта</option></select></div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label>Название</label><input id="matReqName"></div>
+    <div class="fg"><label>Статус</label><select id="matReqStatus"><option>Черновик</option><option>Отправлена</option><option>Согласована</option><option>Заказана</option><option>Получена</option><option>Оплачено</option></select></div>
+  </div>
+  <div class="fg"><label>Заметки</label><textarea id="matReqNotes" rows="2"></textarea></div>
+  <h4 style="margin:12px 0 4px">Позиции</h4>
+  <div style="overflow-x:auto">
+    <table><thead><tr><th>№</th><th>НАИМЕНОВАНИЕ</th><th style="width:80px">ЕД.</th><th style="width:80px">КОЛ-ВО</th><th style="width:100px">ЦЕНА</th><th style="width:100px">СУММА</th><th style="width:30px"></th></tr></thead>
+    <tbody id="matReqItems"></tbody>
+    <tfoot><tr><td colspan="7" style="text-align:center"><button class="btn btn-sm btn-green" onclick="addMatReqItem()">+ Позиция</button></td></tr>
+    <tr><td colspan="5" style="text-align:right;font-weight:bold">ИТОГО:</td><td style="font-weight:bold" id="matReqTotal">0 ₽</td><td></td></tr></tfoot></table>
+  </div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveMatReq(this)">Сохранить</button><button class="btn btn-outline" onclick="exportMatReq()">📊 Excel</button><button class="btn btn-red" onclick="closeM('matReqModal')">Отмена</button></div>
+</div></div>
+
+<!-- Tool Modal -->
+<div class="modal" id="toolModal"><div class="modal-box">
+  <div class="modal-head"><h3 id="toolModalTitle">Инструмент</h3><button class="close-btn" onclick="closeM('toolModal')">&times;</button></div>
+  <input type="hidden" id="toolEditId">
+  <div class="fg"><label>Название *</label><input id="toolName"></div>
+  <div class="fr"><div class="fg"><label>Серийный номер</label><input id="toolSerial"></div><div class="fg"><label>Стоимость *</label><input type="number" id="toolPrice"></div></div>
+  <div class="fr"><div class="fg"><label>Дата покупки</label><input type="date" id="toolDate"></div><div class="fg"><label>Статус</label><select id="toolStatus"><option value="available">Доступен</option><option value="in_use">Используется</option><option value="maintenance">ТО</option><option value="broken">Сломан</option></select></div></div>
+  <div class="fr"><div class="fg"><label>Закреплён за</label><select id="toolContr"><option value="">—</option></select></div><div class="fg"><label>На объекте</label><select id="toolObj"><option value="">—</option></select></div></div>
+  <div class="fg"><label>Заметки</label><textarea id="toolNotes"></textarea></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveTool(this)">Сохранить</button><button class="btn btn-red" onclick="closeM('toolModal')">Отмена</button></div>
+</div></div>
+
+<!-- General Expense Modal -->
+<div class="modal" id="genExpModal"><div class="modal-box">
+  <div class="modal-head"><h3>Общий расход</h3><button class="close-btn" onclick="closeM('genExpModal')">&times;</button></div>
+  <div class="fr"><div class="fg"><label>Категория</label><select id="genExpCat"><option>Бензин</option><option>Аренда</option><option>Связь</option><option>Реклама</option><option>Инструменты</option><option>Прочее</option></select></div><div class="fg"><label>Сумма *</label><input type="number" id="genExpAmount"></div></div>
+  <div class="fg"><label>Описание</label><textarea id="genExpDesc"></textarea></div>
+  <div class="fg"><label>Дата</label><input type="date" id="genExpDate"></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveGenExp(this)">Сохранить</button><button class="btn btn-red" onclick="closeM('genExpModal')">Отмена</button></div>
+</div></div>
+
+<!-- Act Modal -->
+<div class="modal" id="actModal"><div class="modal-box" style="max-width:900px">
+  <div class="modal-head"><h3 id="actModalTitle">Создать акт</h3><button class="close-btn" onclick="closeM('actModal')">&times;</button></div>
+  <div id="actForm">
+    <div class="fg"><label>Объект *</label><select id="actObjectId"></select></div>
+    <div class="fg"><label>Заметки</label><textarea id="actNotes"></textarea></div>
+    <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveAct(this)">Создать</button><button class="btn btn-red" onclick="closeM('actModal')">Отмена</button></div>
+  </div>
+  <div id="actView" style="display:none">
+    <div id="actDetails"></div>
+    <div class="btn-group" style="margin-top:12px">
+      <button class="btn" onclick="exportAct()">📥 Экспорт Excel</button>
+      <button class="btn btn-red" onclick="deleteAct()">🗑 Удалить</button>
+      <button class="btn btn-outline" onclick="closeM('actModal')">Закрыть</button>
+    </div>
+  </div>
+</div></div>
+
+<script>
+'use strict';
+
+const BADGE_CLS={'pending':'b-yellow','paid':'b-green','cancelled':'b-red','To Do':'b-yellow','In Progress':'b-blue','Done':'b-green','planned':'b-yellow','in_progress':'b-blue','completed':'b-green','available':'b-green','in_use':'b-blue','maintenance':'b-yellow','broken':'b-red','delivered':'b-green','ordered':'b-yellow','Выставлен':'b-blue','Оплачен':'b-green','Акт':'b-purple'};
+const BADGE_LBL={'pending':'Ожидает','paid':'Оплачено','cancelled':'Отменено','To Do':'К исполнению','In Progress':'В работе','Done':'Выполнено','planned':'Запланировано','in_progress':'В работе','completed':'Выполнено','available':'Доступен','in_use':'Используется','maintenance':'ТО','broken':'Сломан','delivered':'Доставлено','ordered':'Заказано','Выставлен':'Выставлен','Оплачен':'Оплачен','Акт':'Акт'};
+let D={objects:[],contractors:[],works:[],materials:[],purchases:[],tools:[],contrEstimates:[],worksCombined:[]};
+let suppliers=[], matRequests=[], matReqItemsData=[], catalog={items:[],total_items:0,total_suppliers:0};
+let _saving=false;
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n||0).toLocaleString('ru-RU')+' ₽';
+const today=()=>new Date().toISOString().split('T')[0];
+function esc(s){if(s==null)return'';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML}
+function round2(n){return Math.round((n||0)*100)/100}
+
+function notify(msg,ok=true){const d=document.createElement('div');d.className='notif-item '+(ok?'notif-ok':'notif-err');d.textContent=msg;$('notifBox').appendChild(d);setTimeout(()=>d.remove(),3000)}
+function openM(id){$(id).classList.add('active')}
+function closeM(id){$(id).classList.remove('active')}
+function badge(s){return`<span class="badge ${BADGE_CLS[s]||'b-blue'}">${BADGE_LBL[s]||esc(s)}</span>`}
+async function guardSave(btn,fn){if(_saving)return;_saving=true;if(btn)btn.disabled=true;try{await fn()}finally{_saving=false;if(btn)btn.disabled=false}}
+
+async function api(url,method='GET',data=null){
+  const o={method,headers:{'Content-Type':'application/json'}};
+  if(data)o.body=JSON.stringify(data);
+  const r=await fetch(url,o);
+  if(!r.ok){const e=await r.json().catch(()=>({}));notify(e.detail||'Ошибка '+r.status,false);throw new Error(r.status)}
+  return r.status===204?null:await r.json();
+}
+async function apiUpload(url,fd){const r=await fetch(url,{method:'POST',body:fd});if(!r.ok){const e=await r.json().catch(()=>({}));notify(e.detail||'Ошибка',false);throw new Error(r.status)}return r.json()}
+
+// NAV
+$('mainNav').addEventListener('click',e=>{const b=e.target.closest('.nav-btn');if(!b)return;document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.s).classList.add('active');loadSection(b.dataset.s)});
+document.querySelectorAll('.tabs').forEach(c=>{c.addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;c.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));c.parentElement.querySelectorAll('.tab-c').forEach(x=>x.classList.remove('active'));t.classList.add('active');const tgt=$(t.dataset.t);if(tgt)tgt.classList.add('active');if(t.dataset.t==='catalogList')loadCatalog();if(t.dataset.t==='worksCombList')loadWorksCombined()})});
+
+$('objSearch').addEventListener('input',()=>renderObjects());
+$('objStatusFilter').addEventListener('change',()=>renderObjects());
+
+function refreshAll(){loadSection(document.querySelector('.nav-btn.active').dataset.s);notify('Обновлено')}
+
+async function loadAll(){
+  const[o,c,w,m,p,t]=await Promise.all([api('/objects/'),api('/contractors/'),api('/contractor-works/'),api('/materials/'),api('/material-purchases/'),api('/tools/')]);
+  D.objects=o;D.contractors=c;D.works=w;D.materials=m;D.purchases=p;D.tools=t;
+}
+
+async function loadSection(s){
+  try{
+    if(s==='dashboard')await loadDashboard();
+    else if(s==='objects'){await loadAll();renderObjects()}
+    else if(s==='contractors'){await loadAll();await loadContrEstimates();await loadWorksCombined();renderContractors();renderContrEstimates()}
+    else if(s==='materials'){await loadAll();await loadSuppliers();await loadMatRequests();renderSuppliers();renderMatRequests()}
+    else if(s==='tools'){await loadAll();renderTools()}
+    else if(s==='acts'){await loadAll();loadActs()}
+    else if(s==='finance')await loadFinance();
+  }catch(e){console.error(e)}
+}
+
+// DASHBOARD
+async function loadDashboard(){
+  const d=await api('/dashboard/');
+  const total=Object.values(d.status_counts||{}).reduce((a,b)=>a+b,0);
+  $('dashStats').innerHTML=`
+    <div class="stat card"><div class="stat-val">${total}</div><div class="stat-lbl">Объектов</div></div>
+    <div class="stat card"><div class="stat-val" style="color:var(--green)">${fmt(d.finance.paid)}</div><div class="stat-lbl">Получено</div></div>
+    <div class="stat card"><div class="stat-val" style="color:var(--yellow)">${fmt(d.finance.pending)}</div><div class="stat-lbl">Ожидается</div></div>
+    <div class="stat card"><div class="stat-val" style="color:var(--red)">${(d.overdue_tasks||[]).length}</div><div class="stat-lbl">Просрочено</div></div>`;
+  const rl=items=>(items||[]).length?items.map(t=>`<div style="padding:6px 0;border-bottom:1px solid var(--brd);font-size:13px"><b>${esc(t.title)}</b><br><small style="color:var(--sec)">${esc(t.object_name)} — ${esc(t.deadline)}</small></div>`).join(''):'<div class="empty">Нет</div>';
+  $('dashToday').innerHTML=rl(d.today_tasks);
+  $('dashOverdue').innerHTML=(d.overdue_tasks||[]).length?d.overdue_tasks.map(t=>`<div style="padding:4px 0;font-size:13px;color:var(--red)">⚠️ ${esc(t.title)} (${esc(t.deadline)})</div>`).join(''):'<div class="empty">Нет просроченных ✓</div>';
+  $('dashWeek').innerHTML=rl(d.week_tasks);
+  $('dashObjects').innerHTML=(d.active_objects||[]).length?d.active_objects.map(o=>`<div style="padding:6px 0;border-bottom:1px solid var(--brd);font-size:13px"><b>${esc(o.name)}</b> ${badge(o.status)}<br><small style="color:var(--sec)">${esc(o.client_name)}</small></div>`).join(''):'<div class="empty">Нет</div>';
+}
+
+// OBJECTS
+function renderObjects(){
+  const s=($('objSearch').value||'').toLowerCase();const st=$('objStatusFilter').value;
+  let list=D.objects.filter(o=>{const m=!s||o.name.toLowerCase().includes(s)||(o.client_name||'').toLowerCase().includes(s);return m&&(!st||o.status===st)});
+  if(!list.length){$('objectsList').innerHTML='<div class="empty">Нет объектов</div>';return}
+  $('objectsList').innerHTML=list.map(o=>{const f=o.financials||{};return`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+      <div><h2 style="margin:0;cursor:pointer" onclick="openObjModal(${o.id})">${esc(o.name)}</h2><div style="color:var(--sec);font-size:13px">👤 ${esc(o.client_name)} | 📞 ${esc(o.client_phone)}</div></div>
+      <div class="btn-group">${badge(o.status)}<button class="btn btn-sm btn-red" onclick="deleteObject(${o.id})">×</button></div>
+    </div>
+    <div class="grid g4" style="margin:12px 0">
+      <div class="stat" style="background:rgba(16,185,129,.08)"><div class="stat-val" style="font-size:16px;color:var(--green)">${fmt(f.total_debit)}</div><div class="stat-lbl">Доход</div></div>
+      <div class="stat" style="background:rgba(239,68,68,.08)"><div class="stat-val" style="font-size:16px;color:var(--red)">${fmt(f.contractor_expenses)}</div><div class="stat-lbl">Работы</div></div>
+      <div class="stat" style="background:rgba(239,68,68,.08)"><div class="stat-val" style="font-size:16px;color:var(--red)">${fmt(f.material_expenses)}</div><div class="stat-lbl">Материалы</div></div>
+      <div class="stat" style="background:rgba(59,130,246,.08)"><div class="stat-val" style="font-size:16px;color:var(--pri)">${fmt(f.profit)} (${f.margin_percent||0}%)</div><div class="stat-lbl">Прибыль</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-t="obj-est-${o.id}">Сметы</button>
+      <button class="tab" data-t="obj-tasks-${o.id}">Задачи</button>
+      <button class="tab" data-t="obj-pay-${o.id}">Платежи</button>
+      <button class="tab" data-t="obj-cest-${o.id}">Сметы подр.</button>
+      <button class="tab" data-t="obj-docs-${o.id}">Документы</button>
+      <button class="tab" data-t="obj-comm-${o.id}">Связь</button>
+    </div>
+    <div id="obj-est-${o.id}" class="tab-c active">
+      <div class="btn-group" style="margin-bottom:8px"><button class="btn btn-sm" onclick="openEstModal(${o.id})">+ Смета</button></div>
+      ${(o.estimates||[]).length?o.estimates.map(e=>`<div style="padding:6px;border-bottom:1px solid var(--brd)"><b>${esc(e.name)}</b> <small style="color:var(--sec)">${(e.items||[]).length} поз. • ${fmt((e.items||[]).reduce((s,i)=>s+(i.total_price||0),0))}</small>
+        <table style="margin-top:4px"><thead><tr><th>Работа</th><th>Ед.</th><th>Объём</th><th>Цена</th><th>Сумма</th></tr></thead><tbody>${(e.items||[]).map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td>${i.quantity}</td><td>${fmt(i.price_per_unit)}</td><td>${fmt(i.total_price)}</td></tr>`).join('')}</tbody></table></div>`).join(''):'<div class="empty">Нет смет</div>'}
+    </div>
+    <div id="obj-tasks-${o.id}" class="tab-c">
+      <div class="btn-group" style="margin-bottom:8px"><button class="btn btn-sm" onclick="openTaskModal(${o.id})">+ Задача</button></div>
+      ${(o.tasks||[]).length?o.tasks.map(t=>`<div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid var(--brd);font-size:13px"><div><b>${esc(t.title)}</b><br><small>${esc(t.deadline)||'Без срока'}</small></div><div class="btn-group"><button class="btn btn-sm btn-outline" onclick="toggleTaskStatus(${t.id},'${t.status}')">${badge(t.status)}</button><button class="btn btn-sm btn-red" onclick="deleteTask(${t.id})">×</button></div></div>`).join(''):'<div class="empty">Нет задач</div>'}
+    </div>
+    <div id="obj-pay-${o.id}" class="tab-c">
+      <div class="btn-group" style="margin-bottom:8px"><button class="btn btn-sm btn-green" onclick="openPayModal(${o.id})">+ Платёж</button></div>
+      ${(o.payments||[]).length?o.payments.map(p=>`<div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid var(--brd);font-size:13px"><div><b>${fmt(p.amount)}</b> <small>${esc(p.date)} ${esc(p.description)}</small></div><div class="btn-group"><button class="btn btn-sm btn-outline" onclick="togglePayStatus(${p.id},'${p.status}')">${badge(p.status)}</button><button class="btn btn-sm btn-red" onclick="deletePayment(${p.id})">×</button></div></div>`).join(''):'<div class="empty">Нет платежей</div>'}
+    </div>
+    <div id="obj-cest-${o.id}" class="tab-c">
+      ${(o.contractor_estimates||[]).length?o.contractor_estimates.map(ce=>`<div style="padding:6px;border-bottom:1px solid var(--brd)"><div style="display:flex;justify-content:space-between"><div><b>${esc(ce.name)}</b> <small>👷 ${ce.contractor?esc(ce.contractor.name):'—'} • ${(ce.items||[]).length} поз.</small></div><div class="btn-group">${badge(ce.status)}<button class="btn btn-sm" onclick="openContrEstModal(${ce.id})">✏️</button></div></div>
+        <table style="margin-top:4px"><thead><tr><th>Работа</th><th>Ед.</th><th>Кол-во</th><th>Цена подр.</th><th>Сумма подр.</th><th>Цена клиента</th></tr></thead><tbody>${(ce.items||[]).map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td>${i.quantity}</td><td>${fmt(i.price_per_unit)}</td><td>${fmt(i.total_price)}</td><td>${fmt(i.client_total_price||0)}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td colspan="4" style="text-align:right;font-weight:700">ИТОГО:</td><td style="font-weight:700">${fmt(ce.total_sum)}</td><td></td></tr></tfoot></table></div>`).join(''):'<div class="empty">Нет смет подрядчика</div>'}
+    </div>
+    <div id="obj-docs-${o.id}" class="tab-c">
+      <div class="btn-group" style="margin-bottom:8px"><button class="btn btn-sm" onclick="openDocModal(${o.id})">+ Документ</button></div>
+      ${(o.documents||[]).length?o.documents.map(d=>`<div style="padding:6px;border-bottom:1px solid var(--brd);font-size:13px">📎 <b>${esc(d.name)}</b> <small>${esc(d.doc_type)}</small> ${d.file_path?'<a href="/uploads/'+encodeURIComponent(String(d.file_path).split('/').pop())+'" target="_blank">Скачать</a>':''}</div>`).join(''):'<div class="empty">Нет документов</div>'}
+    </div>
+    <div id="obj-comm-${o.id}" class="tab-c">
+      <div class="btn-group" style="margin-bottom:8px"><button class="btn btn-sm" onclick="openCommModal(${o.id})">+ Запись</button></div>
+      ${(o.communications||[]).length?o.communications.map(c=>`<div style="padding:6px;border-bottom:1px solid var(--brd);font-size:13px"><b>${esc(c.type)}</b> <small>${esc(c.date)}</small><br>${esc(c.description)}</div>`).join(''):'<div class="empty">Нет записей</div>'}
+    </div>
+  </div>`}).join('');
+  initCardTabs();
+}
+
+function initCardTabs(){document.querySelectorAll('.card .tabs').forEach(c=>{c.addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;c.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));c.closest('.card').querySelectorAll('.tab-c').forEach(x=>x.classList.remove('active'));t.classList.add('active');const tgt=document.getElementById(t.dataset.t);if(tgt)tgt.classList.add('active')})})}
+
+function openObjModal(id){
+  $('objEditId').value=id||'';
+  if(id){const o=D.objects.find(x=>x.id===id);if(!o)return;$('objModalTitle').textContent='Редактировать';$('objName').value=o.name;$('objClientName').value=o.client_name;$('objClientPhone').value=o.client_phone;$('objClientEmail').value=o.client_email||'';$('objClientAddr').value=o.client_address||'';$('objStatus').value=o.status;$('objNotes').value=o.notes||''}
+  else{$('objModalTitle').textContent='Новый объект';['objName','objClientName','objClientPhone','objClientEmail','objClientAddr','objNotes'].forEach(x=>$(x).value='');$('objStatus').value='Заявка'}
+  openM('objModal');
+}
+async function saveObject(btn){guardSave(btn,async()=>{const id=$('objEditId').value;const d={name:$('objName').value.trim(),client_name:$('objClientName').value.trim(),client_phone:$('objClientPhone').value.trim(),client_email:$('objClientEmail').value.trim(),client_address:$('objClientAddr').value.trim(),status:$('objStatus').value,notes:$('objNotes').value.trim()};if(!d.name||!d.client_name||!d.client_phone){notify('Заполните поля',false);return}if(id)await api(`/objects/${id}`,'PUT',d);else await api('/objects/','POST',d);closeM('objModal');notify('Сохранено');loadSection('objects')})}
+async function deleteObject(id){if(!confirm('Удалить?'))return;await api(`/objects/${id}`,'DELETE');notify('Удалено');loadSection('objects')}
+
+// ESTIMATES
+function openEstModal(objId){$('estObjId').value=objId;$('estFile').value='';openM('estModal')}
+async function uploadEstimate(btn){guardSave(btn,async()=>{const f=$('estFile').files[0];if(!f){notify('Файл',false);return}const fd=new FormData();fd.append('file',f);const r=await apiUpload(`/objects/${$('estObjId').value}/estimate/upload`,fd);closeM('estModal');notify(r.message||'Загружено');loadSection('objects')})}
+
+// PAYMENTS
+function openPayModal(objId,payId){$('payObjId').value=objId;$('payEditId').value=payId||'';$('payDate').value=today();if(payId){const o=D.objects.find(x=>x.id===objId);const p=o?.payments?.find(x=>x.id===payId);if(p){$('payAmount').value=p.amount;$('payDate').value=p.date||'';$('payDesc').value=p.description||'';$('payStatus').value=p.status}}else{$('payAmount').value='';$('payDesc').value='';$('payStatus').value='pending'}openM('payModal')}
+async function savePayment(btn){guardSave(btn,async()=>{const id=$('payEditId').value;const d={object_id:+$('payObjId').value,amount:+$('payAmount').value,date:$('payDate').value,description:$('payDesc').value.trim(),status:$('payStatus').value};if(!d.amount){notify('Сумма',false);return}if(id)await api(`/payments/${id}`,'PUT',d);else await api('/payments/','POST',d);closeM('payModal');notify('Сохранено');loadSection('objects')})}
+async function togglePayStatus(id,s){await api(`/payments/${id}`,'PUT',{status:s==='pending'?'paid':'pending'});loadSection('objects')}
+async function deletePayment(id){if(!confirm('Удалить?'))return;await api(`/payments/${id}`,'DELETE');notify('Удалено');loadSection('objects')}
+
+// TASKS
+function openTaskModal(objId){$('taskObjId').value=objId;$('taskEditId').value='';$('taskTitle').value='';$('taskDesc').value='';$('taskDeadline').value='';$('taskStatus').value='To Do';openM('taskModal')}
+async function saveTask(btn){guardSave(btn,async()=>{const id=$('taskEditId').value;const d={object_id:+$('taskObjId').value,title:$('taskTitle').value.trim(),description:$('taskDesc').value.trim(),deadline:$('taskDeadline').value||null,status:$('taskStatus').value};if(!d.title){notify('Название',false);return}if(id)await api(`/tasks/${id}`,'PUT',d);else await api('/tasks/','POST',d);closeM('taskModal');notify('Сохранено');loadSection('objects')})}
+async function toggleTaskStatus(id,s){const ns=s==='To Do'?'In Progress':s==='In Progress'?'Done':'To Do';await api(`/tasks/${id}`,'PUT',{status:ns});loadSection('objects')}
+async function deleteTask(id){if(!confirm('Удалить?'))return;await api(`/tasks/${id}`,'DELETE');notify('Удалено');loadSection('objects')}
+
+// COMMUNICATIONS
+function openCommModal(objId){$('commObjId').value=objId;$('commDate').value=today();$('commDesc').value='';openM('commModal')}
+async function saveComm(btn){guardSave(btn,async()=>{const d={object_id:+$('commObjId').value,type:$('commType').value,description:$('commDesc').value.trim(),date:$('commDate').value};if(!d.description){notify('Описание',false);return}await api('/communications/','POST',d);closeM('commModal');notify('Сохранено');loadSection('objects')})}
+
+// DOCUMENTS
+function openDocModal(objId){$('docObjId').value=objId;$('docFile').value='';openM('docModal')}
+async function uploadDoc(btn){guardSave(btn,async()=>{const f=$('docFile').files[0];if(!f){notify('Файл',false);return}const fd=new FormData();fd.append('file',f);await apiUpload(`/objects/${$('docObjId').value}/document/upload?doc_type=${$('docType').value}`,fd);closeM('docModal');notify('Загружено');loadSection('objects')})}
+
+// CONTRACTORS
+function renderContractors(){
+  if(!D.contractors.length){$('contrList').innerHTML='<div class="empty">Нет подрядчиков</div>';return}
+  $('contrList').innerHTML=`<table><thead><tr><th>Имя</th><th>Телефон</th><th>Специализация</th><th></th></tr></thead><tbody>${D.contractors.map(c=>`<tr><td><b>${esc(c.name)}</b></td><td>${esc(c.phone)}</td><td>${esc(c.specialization)||'—'}</td><td class="btn-group"><button class="btn btn-sm" onclick="openContrModal(${c.id})">✏️</button><button class="btn btn-sm btn-red" onclick="deleteContr(${c.id})">×</button></td></tr>`).join('')}</tbody></table>`;
+}
+function openContrModal(id){$('contrEditId').value=id||'';if(id){const c=D.contractors.find(x=>x.id===id);if(!c)return;$('contrModalTitle').textContent='Редактировать';$('contrName').value=c.name;$('contrPhone').value=c.phone;$('contrSpec').value=c.specialization||'';$('contrNotes').value=c.notes||''}else{$('contrModalTitle').textContent='Подрядчик';['contrName','contrPhone','contrSpec','contrNotes'].forEach(x=>$(x).value='')}openM('contrModal')}
+async function saveContractor(btn){guardSave(btn,async()=>{const id=$('contrEditId').value;const d={name:$('contrName').value.trim(),phone:$('contrPhone').value.trim(),specialization:$('contrSpec').value.trim(),notes:$('contrNotes').value.trim()};if(!d.name||!d.phone){notify('Заполните поля',false);return}if(id)await api(`/contractors/${id}`,'PUT',d);else await api('/contractors/','POST',d);closeM('contrModal');notify('Сохранено');loadSection('contractors')})}
+async function deleteContr(id){if(!confirm('Удалить?'))return;await api(`/contractors/${id}`,'DELETE');notify('Удалено');loadSection('contractors')}
+
+// CONTRACTOR ESTIMATES
+async function loadContrEstimates(){D.contrEstimates=await api('/contractor-estimates/')}
+function renderContrEstimates(){
+  if(!D.contrEstimates.length){$('contrEstList').innerHTML='<div class="empty">Нет смет</div>';return}
+  $('contrEstList').innerHTML=`<table><thead><tr><th>Дата</th><th>Объект</th><th>Подрядчик</th><th>Название</th><th>Сумма</th><th>Статус</th><th></th></tr></thead><tbody>${D.contrEstimates.map(e=>{const obj=D.objects.find(o=>o.id===e.object_id);return`<tr>
+    <td>${esc(e.created_at)}</td><td>${obj?esc(obj.name):'—'}</td><td>${e.contractor?esc(e.contractor.name):'—'}</td><td>${esc(e.name)}</td><td><b>${fmt(e.total_sum)}</b></td><td>${badge(e.status)}</td>
+    <td class="btn-group">
+      ${e.status==='planned'?`<button class="btn btn-sm btn-yellow" onclick="updateContrEstStatus(${e.id},'in_progress')">▶</button>`:''}
+      ${e.status==='in_progress'?`<button class="btn btn-sm btn-green" onclick="updateContrEstStatus(${e.id},'completed')">✓</button>`:''}
+      ${e.status==='completed'?`<button class="btn btn-sm btn-purple" onclick="updateContrEstStatus(${e.id},'paid')">💰</button>`:''}
+      <button class="btn btn-sm" onclick="openContrEstModal(${e.id})">✏️</button>
+      <button class="btn btn-sm btn-red" onclick="deleteContrEst(${e.id})">×</button>
+    </td></tr>`}).join('')}</tbody></table>`;
+}
+
+async function updateContrEstStatus(id,status){await api(`/contractor-estimates/${id}`,'PUT',{status});notify('Обновлено');loadSection('contractors')}
+async function deleteContrEst(id){if(!confirm('Удалить?'))return;await api(`/contractor-estimates/${id}`,'DELETE');notify('Удалено');loadSection('contractors')}
+
+function openContrEstModal(estId){
+  $('contrEstEditId').value=estId||'';
+  $('contrEstObject').innerHTML='<option value="">Объект</option>'+D.objects.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');
+  $('contrEstContractor').innerHTML='<option value="">Подрядчик</option>'+D.contractors.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if(estId){
+    const e=D.contrEstimates.find(x=>x.id===estId);if(!e){notify('Не найдена',false);return}
+    $('contrEstModalTitle').textContent='Редактировать смету';$('contrEstObject').value=e.object_id;$('contrEstContractor').value=e.contractor_id;
+    $('contrEstName').value=e.name;$('contrEstStatus').value=e.status;$('contrEstNotes').value=e.notes||'';
+    // For edit — show items as table (not checkboxes)
+    $('contrEstItemsContainer').innerHTML='<p style="color:var(--sec);font-size:12px">Для изменения позиций удалите смету и создайте заново</p>';
+    $('contrEstTotalBlock').style.display='block';$('contrEstTotalValue').textContent=fmt(e.total_sum);
+  }else{
+    $('contrEstModalTitle').textContent='Новая смета подрядчика';$('contrEstName').value='';$('contrEstStatus').value='planned';$('contrEstNotes').value='';
+    $('contrEstItemsContainer').innerHTML='<p style="color:var(--sec);font-size:13px">Выберите объект чтобы увидеть позиции сметы</p>';
+    $('contrEstTotalBlock').style.display='none';
+  }
+  openM('contrEstModal');
+}
+
+async function loadEstItemsForSelection(){
+  const objId=$('contrEstObject').value;
+  if(!objId){$('contrEstItemsContainer').innerHTML='<p style="color:var(--sec)">Выберите объект</p>';return}
+  const obj=D.objects.find(o=>o.id===+objId);if(!obj)return;
+  const allItems=[];(obj.estimates||[]).forEach(e=>(e.items||[]).forEach(i=>allItems.push(i)));
+  if(!allItems.length){$('contrEstItemsContainer').innerHTML='<p style="color:var(--red);font-size:13px">⚠️ У объекта нет сметы. Сначала загрузите Excel.</p>';return}
+  $('contrEstTotalBlock').style.display='block';
+  $('contrEstItemsContainer').innerHTML=`<label style="font-size:12px;font-weight:600;color:var(--sec);margin-bottom:8px;display:block">Выберите позиции и укажите цену подрядчика:</label>
+    ${allItems.map(i=>`<div class="checkbox-item"><input type="checkbox" id="ce-chk-${i.id}" onchange="recalcContrEst()"><div class="item-info"><div class="item-name">${esc(i.name)}</div><div class="item-details">${esc(i.unit)} × ${i.quantity} · Клиент: ${fmt(i.price_per_unit)} · Сумма: ${fmt(i.total_price)}</div></div><input type="number" class="form-control price-input" id="ce-price-${i.id}" placeholder="Цена подр." data-qty="${i.quantity}" data-item-id="${i.id}" data-name="${esc(i.name)}" data-unit="${esc(i.unit)}" oninput="recalcContrEst()" style="width:120px;flex-shrink:0"></div>`).join('')}`;
+}
+
+function recalcContrEst(){
+  let total=0;
+  document.querySelectorAll('.checkbox-item input[type=checkbox]:checked').forEach(cb=>{const id=cb.id.replace('ce-chk-','');const pi=$('ce-price-'+id);const qty=parseFloat(pi?.dataset.qty)||0;const price=parseFloat(pi?.value)||0;total+=qty*price});
+  $('contrEstTotalValue').textContent=fmt(total);
+}
+
+async function saveContrEst(btn){guardSave(btn,async()=>{
+  const id=$('contrEstEditId').value;
+  if(id){
+    // Edit mode — only update name/status/notes
+    const d={name:$('contrEstName').value.trim(),status:$('contrEstStatus').value,notes:$('contrEstNotes').value.trim()};
+    await api(`/contractor-estimates/${id}`,'PUT',d);
+  }else{
+    // Create mode — collect checked items
+    const items=[];
+    document.querySelectorAll('.checkbox-item input[type=checkbox]:checked').forEach(cb=>{
+      const itemId=cb.id.replace('ce-chk-','');const pi=$('ce-price-'+itemId);
+      items.push({estimate_item_id:parseInt(pi.dataset.itemId),name:pi.dataset.name,unit:pi.dataset.unit,quantity:parseFloat(pi.dataset.qty)||0,price_per_unit:parseFloat(pi.value)||0});
+    });
+    if(!items.length){notify('Выберите позиции',false);return}
+    const objId=+$('contrEstObject').value;const contrId=+$('contrEstContractor').value;
+    if(!objId||!contrId){notify('Выберите объект и подрядчика',false);return}
+    await api('/contractor-estimates/','POST',{object_id:objId,contractor_id:contrId,name:$('contrEstName').value.trim()||undefined,status:$('contrEstStatus').value,notes:$('contrEstNotes').value.trim(),items});
+  }
+  closeM('contrEstModal');notify('Сохранено');loadSection('contractors');
+})}
+
+function exportContrEstExcel(){const id=$('contrEstEditId').value;if(id)window.open(`/contractor-estimates/${id}/excel`,'_blank');else notify('Сначала сохраните',false)}
+
+// WORKS COMBINED (Работы = сметы completed/paid + доп. работы)
+async function loadWorksCombined(){D.worksCombined=await api('/works-combined/');renderWorksCombined()}
+function renderWorksCombined(){
+  if(!D.worksCombined.length){$('worksCombList').innerHTML='<div class="empty">Нет выполненных работ</div>';return}
+  $('worksCombList').innerHTML=`<table><thead><tr><th>Тип</th><th>Название</th><th>Объект</th><th>Подрядчик</th><th>Сумма подр.</th><th>Статус</th><th></th></tr></thead><tbody>
+    ${D.worksCombined.map(w=>{
+      const isEst=w.type==='estimate';
+      const typeBadge=isEst?'<span class="badge b-blue">Смета</span>':'<span class="badge b-orange">Доп.</span>';
+      const sum=isEst?w.total_sum:w.total_price;
+      return`<tr style="cursor:pointer" onclick="${isEst?`openContrEstDetailModal(${w.estimate_id})`:`openExtraWorkDetail(${w.work_id})`}">
+        <td>${typeBadge}</td><td><b>${esc(w.name)}</b></td><td>${esc(w.object_name)}</td><td>${esc(w.contractor_name)||'—'}</td><td><b>${fmt(sum)}</b></td><td>${badge(w.status)}</td>
+        <td class="btn-group" onclick="event.stopPropagation()">
+          ${isEst&&w.status==='completed'?`<button class="btn btn-sm btn-purple" onclick="updateContrEstStatus(${w.estimate_id},'paid')">💰 Оплатить</button>`:''}
+          ${!isEst&&w.status==='completed'?`<button class="btn btn-sm btn-purple" onclick="updateExtraWorkStatus(${w.work_id},'paid')">💰 Оплатить</button>`:''}
+          ${!isEst?`<button class="btn btn-sm btn-red" onclick="deleteExtraWork(${w.work_id})">×</button>`:''}
+        </td></tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+async function openContrEstDetailModal(estId){
+  const e=await api(`/contractor-estimates/${estId}`);
+  $('contrEstDetailTitle').textContent=e.name;
+  const clientTotal=(e.items||[]).reduce((s,i)=>s+(i.client_total_price||0),0);
+  $('contrEstDetailContent').innerHTML=`
+    <div class="grid g2" style="margin-bottom:12px">
+      <div><div style="padding:4px 0;border-bottom:1px solid var(--brd)"><span style="color:var(--sec)">Объект</span> <b>${esc(D.objects.find(o=>o.id===e.object_id)?.name||'')}</b></div>
+        <div style="padding:4px 0;border-bottom:1px solid var(--brd)"><span style="color:var(--sec)">Подрядчик</span> <b>${e.contractor?esc(e.contractor.name):''}</b></div></div>
+      <div><div style="padding:4px 0;border-bottom:1px solid var(--brd)"><span style="color:var(--sec)">Статус</span> ${badge(e.status)}</div>
+        <div style="padding:4px 0;border-bottom:1px solid var(--brd)"><span style="color:var(--sec)">Сумма подрядчика</span> <b style="color:var(--red)">${fmt(e.total_sum)}</b></div>
+        <div style="padding:4px 0"><span style="color:var(--sec)">Сумма для клиента</span> <b style="color:var(--green)">${fmt(clientTotal)}</b></div></div>
+    </div>
+    <table><thead><tr><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Цена подр.</th><th>Сумма подр.</th><th>Цена клиента</th><th>Сумма клиента</th></tr></thead><tbody>
+      ${(e.items||[]).map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td>${i.quantity}</td><td>${fmt(i.price_per_unit)}</td><td>${fmt(i.total_price)}</td><td>${fmt(i.client_price_per_unit||0)}</td><td>${fmt(i.client_total_price||0)}</td></tr>`).join('')}
+      <tr style="font-weight:700;background:var(--bg)"><td colspan="4">ИТОГО</td><td>${fmt(e.total_sum)}</td><td></td><td>${fmt(clientTotal)}</td></tr>
+    </tbody></table>
+    <div class="btn-group" style="margin-top:12px">
+      <button class="btn btn-outline" onclick="closeM('contrEstDetailModal')">Закрыть</button>
+      ${e.status==='completed'?`<button class="btn btn-purple" onclick="updateContrEstStatus(${e.id},'paid');closeM('contrEstDetailModal')">💰 Подтвердить оплату</button>`:''}
+    </div>`;
+  openM('contrEstDetailModal');
+}
+
+// EXTRA WORKS
+function openExtraWorkModal(){
+  $('ewObject').innerHTML=D.objects.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');
+  $('ewName').value='';$('ewDesc').value='';$('ewContractor').value='';$('ewQty').value='1';$('ewUnit').value='усл.';$('ewPrice').value='';
+  openM('extraWorkModal');
+}
+async function saveExtraWork(btn){guardSave(btn,async()=>{const d={object_id:+$('ewObject').value,name:$('ewName').value.trim(),description:$('ewDesc').value.trim(),contractor_name:$('ewContractor').value.trim(),quantity:parseFloat($('ewQty').value)||1,unit:$('ewUnit').value,price:parseFloat($('ewPrice').value)||0};if(!d.name){notify('Название',false);return}await api('/extra-works/','POST',d);closeM('extraWorkModal');notify('Добавлено');loadSection('contractors')})}
+async function updateExtraWorkStatus(id,status){await api(`/extra-works/${id}`,'PUT',{status});notify('Обновлено');loadSection('contractors')}
+async function deleteExtraWork(id){if(!confirm('Удалить?'))return;await api(`/extra-works/${id}`,'DELETE');notify('Удалено');loadSection('contractors')}
+function openExtraWorkDetail(wid){const w=D.worksCombined.find(x=>x.work_id===wid);if(!w)return;alert(`${w.name}\nОбъект: ${w.object_name}\nПодрядчик: ${w.contractor_name||'—'}\nСумма: ${fmt(w.total_price)}\nСтатус: ${w.status}`)}
+
+// SUPPLIERS
+async function loadSuppliers(){suppliers=await api('/suppliers/')}
+function renderSuppliers(){
+  if(!suppliers.length){$('supplierList').innerHTML='<div class="empty">Нет поставщиков</div>';return}
+  $('supplierList').innerHTML=`<table><thead><tr><th>Название</th><th>Телефон</th><th>Email</th><th>Файлов</th><th>Позиций</th><th></th></tr></thead><tbody>${suppliers.map(s=>`<tr style="cursor:pointer" onclick="openSupplierDetail(${s.id})"><td><b>${esc(s.name)}</b></td><td>${esc(s.phone)||'—'}</td><td>${esc(s.email)||'—'}</td><td>${(s.price_files||[]).length}</td><td>${s.total_items||0}</td><td class="btn-group" onclick="event.stopPropagation()"><button class="btn btn-sm" onclick="openSupplierModal(${s.id})">✏️</button><button class="btn btn-sm btn-red" onclick="deleteSupplier(${s.id})">×</button></td></tr>`).join('')}</tbody></table>`;
+}
+function openSupplierModal(id){$('supplierEditId').value=id||'';if(id){const s=suppliers.find(x=>x.id===id);if(!s)return;$('supplierModalTitle').textContent='Редактировать';$('supplierName').value=s.name;$('supplierPhone').value=s.phone||'';$('supplierEmail').value=s.email||'';$('supplierAddress').value=s.address||'';$('supplierNotes').value=s.notes||''}else{$('supplierModalTitle').textContent='Поставщик';['supplierName','supplierPhone','supplierEmail','supplierAddress','supplierNotes'].forEach(x=>$(x).value='')}openM('supplierModal')}
+async function saveSupplier(btn){guardSave(btn,async()=>{const id=$('supplierEditId').value;const d={name:$('supplierName').value.trim(),phone:$('supplierPhone').value.trim(),email:$('supplierEmail').value.trim(),address:$('supplierAddress').value.trim(),notes:$('supplierNotes').value.trim()};if(!d.name){notify('Название',false);return}if(id)await api(`/suppliers/${id}`,'PUT',d);else await api('/suppliers/','POST',d);closeM('supplierModal');notify('Сохранено');await loadSuppliers();renderSuppliers()})}
+async function deleteSupplier(id){if(!confirm('Удалить?'))return;await api(`/suppliers/${id}`,'DELETE');notify('Удалено');await loadSuppliers();renderSuppliers()}
+function openSupplierDetail(id){const s=suppliers.find(x=>x.id===id);if(!s)return;$('supplierDetailId').value=s.id;$('supplierDetailTitle').textContent=s.name;$('supplierDetailInfo').innerHTML=`<div style="font-size:13px;color:var(--sec)">${s.phone?'📞 '+esc(s.phone)+' | ':''}${s.email?'✉️ '+esc(s.email):''}</div>`;renderSupplierPriceFiles(s);openM('supplierDetailModal')}
+function renderSupplierPriceFiles(s){const files=s.price_files||[];if(!files.length){$('supplierPriceFiles').innerHTML='<div class="empty">Нет файлов</div>';return}$('supplierPriceFiles').innerHTML=files.map(f=>`<div class="card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between"><div><b>📄 ${esc(f.file_name)}</b> <small>${f.items_count||0} позиций</small></div><div class="btn-group">${f.file_path?'<a href="/uploads/'+encodeURIComponent(String(f.file_path).split('/').pop())+'" target="_blank" class="btn btn-sm btn-outline">📥</a>':''}<button class="btn btn-sm btn-red" onclick="deleteSupplierPriceFile(${f.id})">×</button></div></div></div>`).join('')}
+async function uploadSupplierPriceFile(){const f=$('supplierPriceFileInput').files[0];if(!f)return;const fd=new FormData();fd.append('file',f);const sid=$('supplierDetailId').value;const r=await apiUpload(`/suppliers/${sid}/price-file/upload`,fd);notify(r.message||'Загружено');$('supplierPriceFileInput').value='';await loadSuppliers();const s=suppliers.find(x=>x.id===+sid);if(s)renderSupplierPriceFiles(s);renderSuppliers()}
+async function deleteSupplierPriceFile(fid){if(!confirm('Удалить?'))return;await api(`/suppliers/price-files/${fid}`,'DELETE');notify('Удалено');const sid=$('supplierDetailId').value;await loadSuppliers();const s=suppliers.find(x=>x.id===+sid);if(s)renderSupplierPriceFiles(s);renderSuppliers()}
+
+// CATALOG (Справочник)
+async function loadCatalog(){
+  const search=$('catalogSearch')?.value||'';const sid=$('catalogSupFilter')?.value||'';
+  let url=`/supplier-catalog/?search=${encodeURIComponent(search)}`;if(sid)url+=`&supplier_id=${sid}`;
+  catalog=await api(url);renderCatalog();updateCatalogFilter();
+}
+function updateCatalogFilter(){const sel=$('catalogSupFilter');if(!sel)return;const cv=sel.value;sel.innerHTML='<option value="">Все поставщики</option>'+suppliers.map(s=>`<option value="${s.id}" ${s.id==cv?'selected':''}>${esc(s.name)}</option>`).join('')}
+function renderCatalog(){
+  const el=$('catalogList');
+  el.innerHTML=`<div class="catalog-stats">📦 <strong>${catalog.total_items}</strong> позиций от <strong>${catalog.total_suppliers}</strong> поставщиков</div>
+    <div class="fr" style="margin-bottom:12px"><div class="fg"><input id="catalogSearch" placeholder="🔍 Поиск..." value="${$('catalogSearch')?.value||''}" oninput="loadCatalog()"></div><div class="fg" style="max-width:200px"><select id="catalogSupFilter" onchange="loadCatalog()"><option value="">Все поставщики</option></select></div><div class="fg" style="max-width:150px"><button class="btn btn-green btn-sm" onclick="exportCatalog()">📊 Excel</button></div></div>
+    ${catalog.items.length?`<table><thead><tr><th>№</th><th>Наименование</th><th>Ед.</th><th style="cursor:pointer" onclick="sortCatalog()">Цена ⇅</th><th>Поставщик</th><th>Файл</th></tr></thead><tbody>${catalog.items.map((i,idx)=>`<tr><td>${idx+1}</td><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td><b>${fmt(i.price_per_unit)}</b></td><td>${esc(i.supplier_name)}</td><td><small style="color:var(--sec)">${esc(i.file_name)}</small></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Нет данных</div>'}`;
+  updateCatalogFilter();
+}
+let _catSortAsc=true;
+function sortCatalog(){catalog.items.sort((a,b)=>_catSortAsc?a.price_per_unit-b.price_per_unit:b.price_per_unit-a.price_per_unit);_catSortAsc=!_catSortAsc;renderCatalog()}
+function exportCatalog(){const search=$('catalogSearch')?.value||'';const sid=$('catalogSupFilter')?.value||'';let url=`/supplier-catalog/export?search=${encodeURIComponent(search)}`;if(sid)url+=`&supplier_id=${sid}`;window.open(url,'_blank')}
+
+// MATERIAL REQUESTS
+async function loadMatRequests(){matRequests=await api('/material-requests/')}
+function renderMatRequests(){
+  if(!matRequests.length){$('matPurch').innerHTML='<div class="empty">Нет заявок</div>';return}
+  $('matPurch').innerHTML=`<table><thead><tr><th>Название</th><th>Поставщик</th><th>Объект</th><th>Сумма</th><th>Статус</th><th></th></tr></thead><tbody>${matRequests.map(r=>`<tr style="cursor:pointer" onclick="openMatReqModal(${r.id})"><td><b>${esc(r.name)}</b></td><td>${esc(r.supplier_name)}</td><td>${esc(r.object_name)||'—'}</td><td><b>${fmt(r.total_sum)}</b></td><td>${esc(r.status)}</td><td class="btn-group" onclick="event.stopPropagation()"><button class="btn btn-sm" onclick="openMatReqModal(${r.id})">✏️</button><button class="btn btn-sm btn-outline" onclick="window.open('/material-requests/${r.id}/export','_blank')">📊</button><button class="btn btn-sm btn-red" onclick="deleteMatReq(${r.id})">×</button></td></tr>`).join('')}</tbody></table>`;
+}
+function openMatReqModal(id){
+  $('matReqEditId').value=id||'';
+  $('matReqSupplier').innerHTML='<option value="">Выберите</option>'+suppliers.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  $('matReqObject').innerHTML='<option value="">Без объекта</option>'+D.objects.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');
+  if(id){const r=matRequests.find(x=>x.id===id);if(!r)return;$('matReqModalTitle').textContent='Редактировать заявку';$('matReqSupplier').value=r.supplier_id||'';$('matReqObject').value=r.object_id||'';$('matReqName').value=r.name;$('matReqStatus').value=r.status;$('matReqNotes').value=r.notes||'';matReqItemsData=(r.items||[]).map((it,i)=>({idx:i,name:it.name,unit:it.unit,quantity:it.quantity,price_per_unit:it.price_per_unit,total_price:it.total_price,supplier_price_item_id:it.supplier_price_item_id}))}
+  else{$('matReqModalTitle').textContent='Заявка на материалы';$('matReqSupplier').value='';$('matReqObject').value='';$('matReqName').value='';$('matReqStatus').value='Черновик';$('matReqNotes').value='';matReqItemsData=[{idx:0,name:'',unit:'шт',quantity:1,price_per_unit:0,total_price:0}]}
+  renderMatReqItems();openM('matReqModal');
+}
+function matReqSupplierChanged(){const sid=$('matReqSupplier').value;if(sid&&!$('matReqName').value){const s=suppliers.find(x=>x.id===+sid);if(s)$('matReqName').value='Заявка — '+s.name}}
+function addMatReqItem(){const max=matReqItemsData.length?Math.max(...matReqItemsData.map(x=>x.idx)):-1;matReqItemsData.push({idx:max+1,name:'',unit:'шт',quantity:1,price_per_unit:0,total_price:0});renderMatReqItems()}
+function removeMatReqItem(idx){matReqItemsData=matReqItemsData.filter(x=>x.idx!==idx);if(!matReqItemsData.length)addMatReqItem();else renderMatReqItems()}
+function renderMatReqItems(){
+  $('matReqItems').innerHTML=matReqItemsData.map((it,i)=>`<tr><td>${i+1}</td><td style="position:relative"><input data-field="name" data-idx="${it.idx}" value="${esc(it.name)}" placeholder="Начните вводить..." oninput="matReqNameInput(this,${it.idx})" autocomplete="off"><div class="ac-drop" id="matReqAC_${it.idx}"></div></td><td><input data-field="unit" data-idx="${it.idx}" value="${esc(it.unit)}" style="width:70px"></td><td><input data-field="quantity" data-idx="${it.idx}" type="number" value="${it.quantity}" oninput="calcMatReqRow(${it.idx})" style="width:70px"></td><td><input data-field="price_per_unit" data-idx="${it.idx}" type="number" value="${it.price_per_unit}" oninput="calcMatReqRow(${it.idx})" style="width:90px"></td><td style="text-align:right;font-weight:bold">${fmt(it.total_price)}</td><td><span style="color:red;cursor:pointer;font-size:18px" onclick="removeMatReqItem(${it.idx})">×</span></td></tr>`).join('');
+  calcMatReqTotal();
+}
+function calcMatReqRow(idx){const it=matReqItemsData.find(x=>x.idx===idx);if(!it)return;const q=document.querySelector(`input[data-field="quantity"][data-idx="${idx}"]`);const p=document.querySelector(`input[data-field="price_per_unit"][data-idx="${idx}"]`);it.quantity=parseFloat(q?.value)||0;it.price_per_unit=parseFloat(p?.value)||0;it.total_price=round2(it.quantity*it.price_per_unit);const tr=q?.closest('tr');if(tr){const tds=tr.querySelectorAll('td');if(tds[5])tds[5].innerHTML=fmt(it.total_price)}calcMatReqTotal()}
+function calcMatReqTotal(){$('matReqTotal').textContent=fmt(matReqItemsData.reduce((s,it)=>s+(it.total_price||0),0))}
+async function matReqNameInput(input,idx){const q=input.value.trim();const sid=$('matReqSupplier').value;const drop=$(`matReqAC_${idx}`);const it=matReqItemsData.find(x=>x.idx===idx);if(it)it.name=q;if(!sid){drop.innerHTML='<div class="ac-item" style="color:var(--sec)">Выберите поставщика</div>';drop.style.display='block';return}if(q.length<2){drop.style.display='none';return}try{const r=await api(`/suppliers/${sid}/price-items/search?q=${encodeURIComponent(q)}`);if(!r.length){drop.style.display='none';return}drop.innerHTML=r.map(r=>`<div class="ac-item" onclick="selectMatReqItem(${idx},${JSON.stringify(r).replace(/"/g,'&quot;')})">${esc(r.name)} <small>${esc(r.unit)} — ${fmt(r.price_per_unit)}</small></div>`).join('');drop.style.display='block'}catch(e){drop.style.display='none'}}
+function selectMatReqItem(idx,item){const d=matReqItemsData.find(x=>x.idx===idx);if(!d)return;d.name=item.name;d.unit=item.unit||'шт';d.price_per_unit=item.price_per_unit||0;d.total_price=round2(d.quantity*d.price_per_unit);d.supplier_price_item_id=item.id;$(`matReqAC_${idx}`).style.display='none';renderMatReqItems()}
+document.addEventListener('click',e=>{if(!e.target.closest('#matReqItems'))document.querySelectorAll('#matReqItems .ac-drop').forEach(d=>d.style.display='none')});
+async function saveMatReq(btn){guardSave(btn,async()=>{const id=$('matReqEditId').value;const sid=$('matReqSupplier').value;if(!sid){notify('Выберите поставщика',false);return}matReqItemsData.forEach(it=>{const n=document.querySelector(`input[data-field="name"][data-idx="${it.idx}"]`);const u=document.querySelector(`input[data-field="unit"][data-idx="${it.idx}"]`);const q=document.querySelector(`input[data-field="quantity"][data-idx="${it.idx}"]`);const p=document.querySelector(`input[data-field="price_per_unit"][data-idx="${it.idx}"]`);if(n)it.name=n.value.trim();if(u)it.unit=u.value.trim();if(q)it.quantity=parseFloat(q.value)||0;if(p)it.price_per_unit=parseFloat(p.value)||0;it.total_price=round2(it.quantity*it.price_per_unit)});const valid=matReqItemsData.filter(i=>i.name);if(!valid.length){notify('Добавьте позицию',false);return}let name=$('matReqName').value.trim();if(!name){const s=suppliers.find(x=>x.id===+sid);name='Заявка — '+(s?s.name:'Поставщик')}const d={supplier_id:+sid,object_id:$('matReqObject').value?+$('matReqObject').value:null,name,status:$('matReqStatus').value,notes:$('matReqNotes').value.trim(),items:valid.map(i=>({name:i.name,unit:i.unit,quantity:i.quantity,price_per_unit:i.price_per_unit,supplier_price_item_id:i.supplier_price_item_id}))};if(id)await api(`/material-requests/${id}`,'PUT',d);else await api('/material-requests/','POST',d);closeM('matReqModal');notify('Сохранено');await loadMatRequests();renderMatRequests()})}
+async function deleteMatReq(id){if(!confirm('Удалить?'))return;await api(`/material-requests/${id}`,'DELETE');notify('Удалено');await loadMatRequests();renderMatRequests()}
+function exportMatReq(){const id=$('matReqEditId').value;if(id)window.open(`/material-requests/${id}/export`,'_blank');else notify('Сохраните сначала',false)}
+
+// TOOLS
+function renderTools(){
+  if(!D.tools.length){$('toolsList').innerHTML='<div class="empty">Нет</div>';return}
+  $('toolsList').innerHTML=`<table><thead><tr><th>Название</th><th>Серийный</th><th>Стоимость</th><th>Статус</th><th>Закреплён</th><th>Объект</th><th></th></tr></thead><tbody>${D.tools.map(t=>{const c=D.contractors.find(x=>x.id===t.contractor_id);const o=D.objects.find(x=>x.id===t.object_id);return`<tr><td><b>${esc(t.name)}</b></td><td>${esc(t.serial_number)||'—'}</td><td>${fmt(t.purchase_price)}</td><td>${badge(t.status)}</td><td>${c?esc(c.name):'—'}</td><td>${o?esc(o.name):'—'}</td><td class="btn-group"><button class="btn btn-sm" onclick="openToolModal(${t.id})">✏️</button><button class="btn btn-sm btn-red" onclick="deleteTool(${t.id})">×</button></td></tr>`}).join('')}</tbody></table>`;
+}
+function openToolModal(id){$('toolEditId').value=id||'';$('toolContr').innerHTML='<option value="">—</option>'+D.contractors.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');$('toolObj').innerHTML='<option value="">—</option>'+D.objects.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');if(id){const t=D.tools.find(x=>x.id===id);if(!t)return;$('toolModalTitle').textContent='Редактировать';$('toolName').value=t.name;$('toolSerial').value=t.serial_number||'';$('toolPrice').value=t.purchase_price;$('toolDate').value=t.purchase_date||'';$('toolStatus').value=t.status;$('toolContr').value=t.contractor_id||'';$('toolObj').value=t.object_id||'';$('toolNotes').value=t.notes||''}else{$('toolModalTitle').textContent='Инструмент';['toolName','toolSerial','toolNotes'].forEach(x=>$(x).value='');$('toolPrice').value='';$('toolDate').value=today();$('toolStatus').value='available';$('toolContr').value='';$('toolObj').value=''}openM('toolModal')}
+async function saveTool(btn){guardSave(btn,async()=>{const id=$('toolEditId').value;const d={name:$('toolName').value.trim(),serial_number:$('toolSerial').value.trim(),purchase_price:+$('toolPrice').value,purchase_date:$('toolDate').value||null,status:$('toolStatus').value,contractor_id:$('toolContr').value?+$('toolContr').value:null,object_id:$('toolObj').value?+$('toolObj').value:null,notes:$('toolNotes').value.trim()};if(!d.name||!d.purchase_price){notify('Заполните поля',false);return}if(id)await api(`/tools/${id}`,'PUT',d);else await api('/tools/','POST',d);closeM('toolModal');notify('Сохранено');loadSection('tools')})}
+async function deleteTool(id){if(!confirm('Удалить?'))return;await api(`/tools/${id}`,'DELETE');notify('Удалено');loadSection('tools')}
+
+// FINANCE
+async function loadFinance(){
+  const f=await api('/financial/summary');
+  $('finStats').innerHTML=`
+    <div class="stat card"><div class="stat-val" style="color:var(--green)">${fmt(f.total_debit)}</div><div class="stat-lbl">Дебет (доходы)</div></div>
+    <div class="stat card"><div class="stat-val" style="color:var(--red)">${fmt(f.total_credit)}</div><div class="stat-lbl">Кредит (расходы)</div><div style="font-size:11px;color:var(--sec);margin-top:4px">👷 ${fmt(f.total_contractor)} + 🧱 ${fmt(f.total_material)} + 📋 ${fmt(f.total_general)}</div></div>
+    <div class="stat card"><div class="stat-val" style="color:var(--pri)">${fmt(f.total_profit)}</div><div class="stat-lbl">Прибыль</div></div>
+    <div class="stat card"><div class="stat-val" style="color:var(--purple)">${f.total_debit>0?((f.total_profit/f.total_debit)*100).toFixed(1):0}%</div><div class="stat-lbl">Маржа</div></div>`;
+  $('finByObjects').innerHTML=(f.by_objects||[]).length?`<table><thead><tr><th>Объект</th><th>Доход</th><th>Работы</th><th>Материалы</th><th>Акты</th><th>Прибыль</th><th>Маржа</th></tr></thead><tbody>${f.by_objects.map(o=>`<tr><td><b>${esc(o.object_name)}</b><br><small style="color:var(--sec)">${esc(o.client_name)}</small></td><td style="color:var(--green)">${fmt(o.total_debit)}</td><td style="color:var(--red)">${fmt(o.contractor_expenses)}</td><td style="color:var(--red)">${fmt(o.material_expenses)}</td><td style="color:var(--orange)">${fmt(o.acts_total||0)}</td><td style="color:var(--pri)">${fmt(o.profit)}</td><td>${o.margin_percent}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Нет данных</div>';
+  const cm=today().slice(0,7);$('planMonth').value=cm;$('planIncome').value=f.planned_income||0;$('planExpenses').value=f.planned_expenses||0;$('planProfit').textContent=fmt(f.planned_profit||0);
+  $('contrDebts').innerHTML=(f.contractor_debts||[]).length?f.contractor_debts.map(d=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd)"><span>👷 ${esc(d.name)}</span><b style="color:var(--red)">${fmt(d.debt)}</b></div>`).join(''):'<div class="empty">Нет долгов</div>';
+  $('clientDebts').innerHTML=(f.client_debts||[]).length?f.client_debts.map(d=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd)"><span>💰 ${esc(d.client_name)} (${esc(d.object_name)})</span><b style="color:var(--green)">${fmt(d.debt)}</b></div>`).join(''):'<div class="empty">Нет долгов</div>';
+  const ge=await api('/general-expenses/');
+  $('genExpList').innerHTML=ge.length?`<table><thead><tr><th>Дата</th><th>Категория</th><th>Описание</th><th>Сумма</th><th></th></tr></thead><tbody>${ge.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.category)}</td><td>${esc(e.description)||''}</td><td><b>${fmt(e.amount)}</b></td><td><button class="btn btn-sm btn-red" onclick="deleteGenExp(${e.id})">×</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Нет</div>';
+}
+async function savePlan(){const d={month:$('planMonth').value,planned_income:+$('planIncome').value||0,planned_expenses:+$('planExpenses').value||0};if(!d.month){notify('Месяц',false);return}await api('/financial/plans/','POST',d);$('planProfit').textContent=fmt(d.planned_income-d.planned_expenses);notify('Сохранено')}
+function openGenExpModal(){$('genExpAmount').value='';$('genExpDesc').value='';$('genExpDate').value=today();openM('genExpModal')}
+async function saveGenExp(btn){guardSave(btn,async()=>{const d={category:$('genExpCat').value,description:$('genExpDesc').value.trim(),amount:+$('genExpAmount').value,date:$('genExpDate').value};if(!d.amount){notify('Сумма',false);return}await api('/general-expenses/','POST',d);closeM('genExpModal');notify('Сохранено');loadFinance()})}
+async function deleteGenExp(id){if(!confirm('Удалить?'))return;await api(`/general-expenses/${id}`,'DELETE');notify('Удалено');loadFinance()}
+
+// ACTS
+let currentActId = null;
+
+async function loadActs(){
+  const acts = await api('/acts/');
+  const objects = D.objects;
+  
+  // Все акты
+  $('actsAll').innerHTML = acts.length ? `
+    <table><thead><tr><th>№</th><th>Объект</th><th>Дата</th><th>Сумма</th><th>Статус</th><th></th></tr></thead>
+    <tbody>${acts.map(a => `<tr>
+      <td><b>${esc(a.act_number)}</b></td>
+      <td>${esc(a.object_name)}</td>
+      <td>${esc(a.created_at)}</td>
+      <td><b>${fmt(a.total_sum)}</b></td>
+      <td>${badge(a.status)}</td>
+      <td class="btn-group">
+        <button class="btn btn-sm btn-outline" onclick="viewAct(${a.id})">👁</button>
+        <button class="btn btn-sm" onclick="exportActDirect(${a.id})">📥</button>
+      </td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">Нет актов</div>';
+  
+  // По объекту
+  const byObj = {};
+  acts.forEach(a => {
+    if (!byObj[a.object_id]) byObj[a.object_id] = { name: a.object_name, acts: [], total: 0 };
+    byObj[a.object_id].acts.push(a);
+    byObj[a.object_id].total += a.total_sum;
+  });
+  $('actsByObject').innerHTML = Object.keys(byObj).length ? `
+    <table><thead><tr><th>Объект</th><th>Кол-во актов</th><th>Общая сумма</th></tr></thead>
+    <tbody>${Object.entries(byObj).map(([id, d]) => `<tr>
+      <td><b>${esc(d.name)}</b></td>
+      <td>${d.acts.length}</td>
+      <td style="color:var(--pri)"><b>${fmt(d.total)}</b></td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">Нет данных</div>';
+}
+
+function openActModal(){
+  $('actForm').style.display = 'block';
+  $('actView').style.display = 'none';
+  $('actModalTitle').textContent = 'Создать акт';
+  $('actObjectId').innerHTML = D.objects.map(o => `<option value="${o.id}">${esc(o.name)} (${esc(o.client_name)})</option>`).join('');
+  $('actNotes').value = '';
+  currentActId = null;
+  openM('actModal');
+}
+
+async function saveAct(btn){
+  guardSave(btn, async () => {
+    const objectId = +$('actObjectId').value;
+    if (!objectId) { notify('Выберите объект', false); return; }
+    const res = await api('/acts/', 'POST', { object_id: objectId, notes: $('actNotes').value.trim() });
+    closeM('actModal');
+    notify('Акт создан: ' + res.act_number);
+    loadActs();
+  });
+}
+
+async function viewAct(id){
+  const act = await api(`/acts/${id}`);
+  currentActId = id;
+  $('actForm').style.display = 'none';
+  $('actView').style.display = 'block';
+  $('actModalTitle').textContent = act.act_number;
+  
+  let itemsHtml = act.items.length ? `
+    <table><thead><tr><th>№</th><th>Наименование</th><th>Ед.изм</th><th>Объём</th><th>Цена</th><th>Сумма</th></tr></thead>
+    <tbody>${act.items.map((it, i) => `<tr>
+      <td>${i + 1}</td>
+      <td>${esc(it.name)}</td>
+      <td>${esc(it.unit)}</td>
+      <td>${it.quantity}</td>
+      <td>${fmt(it.price_per_unit)}</td>
+      <td><b>${fmt(it.total_price)}</b></td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">Нет позиций</div>';
+  
+  $('actDetails').innerHTML = `
+    <div style="margin-bottom:12px">
+      <div class="fr">
+        <div><strong>Объект:</strong> ${esc(act.object_name)}</div>
+        <div><strong>Дата:</strong> ${esc(act.created_at)}</div>
+        <div><strong>Статус:</strong> <select id="actStatusSelect" onchange="changeActStatus()">
+          <option value="Выставлен" ${act.status==='Выставлен'?'selected':''}>Выставлен</option>
+          <option value="Оплачен" ${act.status==='Оплачен'?'selected':''}>Оплачен</option>
+        </select></div>
+      </div>
+    </div>
+    ${itemsHtml}
+    <div style="margin-top:12px;text-align:right;font-size:16px"><strong>ИТОГО: ${fmt(act.total_sum)}</strong></div>
+    ${act.notes ? `<div style="margin-top:8px;color:var(--sec)"><strong>Заметки:</strong> ${esc(act.notes)}</div>` : ''}
+  `;
+  openM('actModal');
+}
+
+async function changeActStatus(){
+  if (!currentActId) return;
+  const status = $('actStatusSelect').value;
+  await api(`/acts/${currentActId}`, 'PUT', { status });
+  notify('Статус обновлён: ' + status);
+  loadActs();
+}
+
+function exportAct(){
+  if (currentActId) window.open(`/acts/${currentActId}/excel`, '_blank');
+}
+
+function exportActDirect(id){
+  window.open(`/acts/${id}/excel`, '_blank');
+}
+
+async function deleteAct(){
+  if (!currentActId) return;
+  if (!confirm('Удалить акт?')) return;
+  await api(`/acts/${currentActId}`, 'DELETE');
+  notify('Акт удалён');
+  closeM('actModal');
+  loadActs();
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded',async()=>{try{await Promise.all([loadDashboard(),loadAll()])}catch(e){console.error(e)}});
+</script>
+</body>
+</html>
