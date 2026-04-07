@@ -637,9 +637,26 @@ async function loadEstItemsForSelection(){
   const obj=D.objects.find(o=>o.id===+objId);if(!obj)return;
   const allItems=[];(obj.estimates||[]).forEach(e=>(e.items||[]).forEach(i=>allItems.push(i)));
   if(!allItems.length){$('contrEstItemsContainer').innerHTML='<p style="color:var(--red);font-size:13px">⚠️ У объекта нет сметы. Сначала загрузите Excel.</p>';return}
+  
+  // Загружаем занятые позиции
+  let lockedMap={};
+  try{const ld=await api(`/estimate-items/locked?object_id=${objId}`);(ld.details||[]).forEach(d=>{lockedMap[d.estimate_item_id]=d})}catch(e){}
+  
   $('contrEstTotalBlock').style.display='block';
   $('contrEstItemsContainer').innerHTML=`<label style="font-size:12px;font-weight:600;color:var(--sec);margin-bottom:8px;display:block">Выберите позиции и укажите цену подрядчика:</label>
-    ${allItems.map(i=>`<div class="checkbox-item"><input type="checkbox" id="ce-chk-${i.id}" onchange="recalcContrEst()"><div class="item-info"><div class="item-name">${esc(i.name)}</div><div class="item-details">${esc(i.unit)} × ${i.quantity} · Клиент: ${fmt(i.price_per_unit)} · Сумма: ${fmt(i.total_price)}</div></div><input type="number" class="form-control price-input" id="ce-price-${i.id}" placeholder="Цена подр." data-qty="${i.quantity}" data-item-id="${i.id}" data-name="${esc(i.name)}" data-unit="${esc(i.unit)}" oninput="recalcContrEst()" style="width:120px;flex-shrink:0"></div>`).join('')}`;
+    ${allItems.map(i=>{
+      const lk=lockedMap[i.id];
+      const dis=lk?'disabled':'';
+      const info=lk?`<div style="font-size:11px;color:var(--red);margin-top:2px">🔒 Занято: ${esc(lk.contractor_name)} (${esc(lk.status)})</div>`:'';
+      return `<div class="checkbox-item" style="${lk?'background:#f0f0f0;opacity:0.6;pointer-events:none':''}">
+        <input type="checkbox" id="ce-chk-${i.id}" ${dis} onchange="recalcContrEst()">
+        <div class="item-info">
+          <div class="item-name">${esc(i.name)} ${info}</div>
+          <div class="item-details">${esc(i.unit)} × ${i.quantity} · Клиент: ${fmt(i.price_per_unit)} · Сумма: ${fmt(i.total_price)}</div>
+        </div>
+        <input type="number" class="form-control price-input" id="ce-price-${i.id}" placeholder="Цена подр." data-qty="${i.quantity}" data-item-id="${i.id}" data-name="${esc(i.name)}" data-unit="${esc(i.unit)}" oninput="recalcContrEst()" style="width:120px;flex-shrink:0" ${dis}>
+      </div>`;
+    }).join('')}`;
 }
 
 function recalcContrEst(){

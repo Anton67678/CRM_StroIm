@@ -410,6 +410,33 @@ async def search_all_estimate_items(q: str = "", db: Session = Depends(database.
     } for i in items]
 
 
+@app.get("/estimate-items/locked")
+async def get_locked_estimate_items(object_id: int, db: Session = Depends(database.get_db)):
+    """Возвращает ID позиций из основной сметы, которые уже используются в сметах подрядчика
+    со статусами, блокирующими повторное назначение."""
+    estimates = db.query(models.ContractorEstimate).options(
+        joinedload(models.ContractorEstimate.contractor),
+        joinedload(models.ContractorEstimate.items)
+    ).filter(
+        models.ContractorEstimate.object_id == object_id,
+        models.ContractorEstimate.status.in_(["in_progress", "completed", "paid", "Акт"])
+    ).all()
+    
+    locked_ids = set()
+    details = []
+    for est in estimates:
+        for item in est.items:
+            if item.estimate_item_id and item.estimate_item_id not in locked_ids:
+                locked_ids.add(item.estimate_item_id)
+                details.append({
+                    "estimate_item_id": item.estimate_item_id,
+                    "contractor_name": est.contractor.name if est.contractor else "—",
+                    "estimate_name": est.name,
+                    "status": est.status
+                })
+    return {"locked_ids": list(locked_ids), "details": details}
+
+
 # =====================
 # ДОКУМЕНТЫ
 # =====================
@@ -568,6 +595,23 @@ async def create_contractor_estimate(data: schemas.ContractorEstimateCreate, db:
     if not obj: raise HTTPException(404, "Объект не найден")
     contr = db.query(models.Contractor).filter(models.Contractor.id == data.contractor_id).first()
     if not contr: raise HTTPException(404, "Подрядчик не найден")
+
+    # ПРОВЕРКА: не заняты ли позиции другими подрядчиками (если статус блокирующий)
+    if data.status in ("in_progress", "completed", "paid", "Акт"):
+        locked_ids = set()
+        existing_estimates = db.query(models.ContractorEstimate).filter(
+            models.ContractorEstimate.object_id == data.object_id,
+            models.ContractorEstimate.contractor_id != data.contractor_id,
+            models.ContractorEstimate.status.in_(["in_progress", "completed", "paid", "Акт"])
+        ).all()
+        for est in existing_estimates:
+            for it in est.items:
+                if it.estimate_item_id:
+                    locked_ids.add(it.estimate_item_id)
+        for item_data in data.items:
+            if item_data.estimate_item_id and item_data.estimate_item_id in locked_ids:
+                raise HTTPException(400, f"Позиция '{item_data.name}' уже выполняется другим подрядчиком")
+
     name = data.name or f"Смета работ: {obj.name}"
     estimate = models.ContractorEstimate(
         object_id=data.object_id, contractor_id=data.contractor_id,
