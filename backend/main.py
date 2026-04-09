@@ -1753,6 +1753,87 @@ async def ai_chat(data: dict):
     return {"reply": reply}
 
 
+
+# =====================
+# ЗАЯВКИ НА РАБОТЫ
+# =====================
+
+@app.post("/work-batches/")
+async def create_work_batch(data: schemas.WorkBatchCreate, db: Session = Depends(database.get_db)):
+    obj = db.query(models.Object).filter(models.Object.id == data.object_id).first()
+    if not obj: raise HTTPException(404, "Объект не найден")
+    batch = models.WorkBatch(
+        object_id=data.object_id, 
+        name=data.name or f"Заявка: {obj.name}", 
+        status="scheduled" if data.scheduled_at else "draft", 
+        scheduled_at=data.scheduled_at, 
+        notes=data.notes or "", 
+        created_at=now_str()
+    )
+    db.add(batch); db.flush()
+    for it in data.items:
+        db.add(models.WorkBatchItem(batch_id=batch.id, estimate_item_id=it.estimate_item_id, name=it.name, unit=it.unit, quantity=it.quantity))
+    for cid in data.contractor_ids:
+        db.add(models.WorkBatchContractor(batch_id=batch.id, contractor_id=cid, status="pending"))
+    db.commit(); db.refresh(batch)
+    return {"id": batch.id, "name": batch.name, "status": batch.status, "items_count": len(data.items), "contractors_count": len(data.contractor_ids)}
+
+@app.get("/work-batches/")
+async def list_work_batches(object_id: Optional[int] = None, status: Optional[str] = None, db: Session = Depends(database.get_db)):
+    q = db.query(models.WorkBatch).options(
+        joinedload(models.WorkBatch.object), 
+        joinedload(models.WorkBatch.items), 
+        joinedload(models.WorkBatch.contractors).joinedload(models.WorkBatchContractor.contractor)
+    )
+    if object_id: q = q.filter(models.WorkBatch.object_id == object_id)
+    if status: q = q.filter(models.WorkBatch.status == status)
+    result = []
+    for b in q.order_by(models.WorkBatch.id.desc()).all():
+        result.append({
+            "id": b.id, "object_id": b.object_id, "object_name": b.object.name if b.object else "", 
+            "name": b.name, "status": b.status, "scheduled_at": b.scheduled_at, "created_at": b.created_at, "notes": b.notes, 
+            "items": [{"id": i.id, "name": i.name, "unit": i.unit, "quantity": i.quantity} for i in b.items], 
+            "contractors": [{"id": c.id, "contractor_id": c.contractor_id, "contractor_name": c.contractor.name if c.contractor else "", "status": c.status} for c in b.contractors]
+        })
+    return result
+
+@app.get("/work-batches/{batch_id}")
+async def get_work_batch(batch_id: int, db: Session = Depends(database.get_db)):
+    b = db.query(models.WorkBatch).options(
+        joinedload(models.WorkBatch.object), 
+        joinedload(models.WorkBatch.items), 
+        joinedload(models.WorkBatch.contractors).joinedload(models.WorkBatchContractor.contractor)
+    ).filter(models.WorkBatch.id == batch_id).first()
+    if not b: raise HTTPException(404)
+    return {"id": b.id, "object_id": b.object_id, "object_name": b.object.name if b.object else "", "name": b.name, "status": b.status, "scheduled_at": b.scheduled_at, "notes": b.notes, "created_at": b.created_at, "items": [{"id": i.id, "name": i.name, "unit": i.unit, "quantity": i.quantity} for i in b.items], "contractors": [{"id": c.id, "contractor_id": c.contractor_id, "contractor_name": c.contractor.name if c.contractor else "", "status": c.status} for c in b.contractors]}
+
+@app.put("/work-batches/{batch_id}")
+async def update_work_batch(batch_id: int, data: dict, db: Session = Depends(database.get_db)):
+    b = db.query(models.WorkBatch).filter(models.WorkBatch.id == batch_id).first()
+    if not b: raise HTTPException(404)
+    if "status" in data: b.status = data["status"]
+    db.commit()
+    return {"id": b.id, "status": b.status}
+
+@app.delete("/work-batches/{batch_id}")
+async def delete_work_batch(batch_id: int, db: Session = Depends(database.get_db)):
+    b = db.query(models.WorkBatch).filter(models.WorkBatch.id == batch_id).first()
+    if not b: raise HTTPException(404)
+    db.delete(b); db.commit()
+    return {"ok": True}
+
+@app.post("/telegram-users/")
+async def create_telegram_user(data: schemas.TelegramUserCreate, db: Session = Depends(database.get_db)):
+    u = models.TelegramUser(contractor_id=data.contractor_id, telegram_id=data.telegram_id, telegram_username=data.telegram_username or "", first_name=data.first_name or "", last_name=data.last_name or "", created_at=now_str())
+    db.add(u); db.commit(); db.refresh(u)
+    return {"id": u.id, "telegram_id": u.telegram_id}
+
+@app.get("/telegram-users/")
+async def list_telegram_users(contractor_id: Optional[int] = None, db: Session = Depends(database.get_db)):
+    q = db.query(models.TelegramUser).options(joinedload(models.TelegramUser.contractor))
+    if contractor_id: q = q.filter(models.TelegramUser.contractor_id == contractor_id)
+    return [{"id": u.id, "contractor_id": u.contractor_id, "contractor_name": u.contractor.name if u.contractor else "", "telegram_id": u.telegram_id} for u in q.all()]
+
 # =====================
 # ГЛАВНАЯ
 # =====================

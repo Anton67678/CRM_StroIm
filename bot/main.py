@@ -64,6 +64,39 @@ async def handle_message(message: Message):
         logging.error(f"Error: {e}")
         await message.answer(f"⚠️ Произошла ошибка: {e}")
 
+
+async def send_work_batch_to_contractors(batch_id: int, items: list, object_name: str, contractor_ids: list):
+    import random, asyncio
+    items_text = "\n".join([f"• {item['name']}: {item['quantity']} {item['unit']}" for item in items])
+    message_text = f"🏗 <b>Новая заявка на работы</b>\n📍 Объект: {object_name}\n📋 <b>Список работ:</b>\n{items_text}\nНажмите кнопку ниже, чтобы ответить:"
+    for idx, cid in enumerate(contractor_ids):
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(f"{CRM_API_URL}/telegram-users/?contractor_id={cid}")
+                users = resp.json()
+            if not users: continue
+            tid = users[0]["telegram_id"]
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Взять", callback_data=f"accept_{batch_id}")],
+                [InlineKeyboardButton(text="💰 Цена", callback_data=f"bid_{batch_id}")],
+                [InlineKeyboardButton(text="❌ Отказ", callback_data=f"decline_{batch_id}")]
+            ])
+            await bot.send_message(chat_id=tid, text=message_text, parse_mode="HTML", reply_markup=keyboard)
+            if idx < len(contractor_ids) - 1:
+                await asyncio.sleep(random.uniform(2, 4))
+        except Exception as e:
+            logging.error(f"Error sending to {cid}: {e}")
+
+@dp.callback_query(lambda c: c.data.startswith(("accept_", "bid_", "decline_")))
+async def handle_contractor_response(callback: CallbackQuery):
+    action, bid = callback.data.split("_", 1)
+    if action == "accept":
+        await callback.answer("Принято!")
+        await callback.message.edit_text(f"{callback.message.text}\n\n✅ <b>Принято</b>")
+    elif action == "decline":
+        await callback.answer("Отказано")
+        await callback.message.edit_text(f"{callback.message.text}\n\n❌ <b>Отказ</b>")
+
 async def main():
     logging.info("Bot starting...")
     await dp.start_polling(bot)

@@ -101,6 +101,7 @@ tr:hover{background:rgba(59,130,246,.04)}
   <button class="nav-btn" data-s="materials">📦 Материалы</button>
   <button class="nav-btn" data-s="tools">🔧 Инструменты</button>
   <button class="nav-btn" data-s="acts">📄 Акты</button>
+  <button class="nav-btn" data-s="work-batches">📋 Заявки</button>
   <button class="nav-btn" data-s="finance">💰 Финансы</button>
 </nav>
 <div class="notif" id="notifBox"></div>
@@ -192,6 +193,12 @@ tr:hover{background:rgba(59,130,246,.04)}
   </div>
 </div>
 
+
+<!-- WORK BATCHES -->
+<div id="work-batches" class="section">
+  <div class="card" style="margin-bottom:12px"><button class="btn" onclick="openWbModal()">+ Создать заявку</button></div>
+  <div class="card"><div id="wbList"></div></div>
+</div>
 <!-- FINANCE -->
 <div id="finance" class="section">
   <div class="grid g4" id="finStats"></div>
@@ -424,6 +431,19 @@ tr:hover{background:rgba(59,130,246,.04)}
   </div>
 </div></div>
 
+
+<!-- Work Batch Modal -->
+<div class="modal" id="wbModal"><div class="modal-box" style="max-width:900px">
+  <div class="modal-head"><h3>Создать заявку</h3><button class="close-btn" onclick="closeM('wbModal')">&times;</button></div>
+  <div class="fr"><div class="fg"><label>Объект *</label><select id="wbObj"></select></div></div>
+  <div class="fg"><label>Название</label><input id="wbName" placeholder="Авто"></div>
+  <h3 style="margin:12px 0 8px;font-size:14px">📋 Работы:</h3>
+  <div id="wbItems" style="max-height:200px;overflow-y:auto;margin-bottom:12px"><p style="color:var(--sec)">Выбери объект</p></div>
+  <h3 style="margin:12px 0 8px;font-size:14px">👷 Подрядчики (несколько):</h3>
+  <div id="wbConts" style="max-height:150px;overflow-y:auto;margin-bottom:12px"></div>
+  <div class="fr"><div class="fg"><label>Время отправки</label><input type="datetime-local" id="wbTime"></div><div class="fg"><label>Заметки</label><textarea id="wbNotes" rows="2"></textarea></div></div>
+  <div class="btn-group" style="margin-top:12px"><button class="btn" onclick="saveWb()">📤 Создать</button><button class="btn btn-outline" onclick="closeM('wbModal')">Отмена</button></div>
+</div></div>
 <script>
 'use strict';
 
@@ -476,7 +496,7 @@ async function loadSection(s){
     else if(s==='materials'){await loadAll();await loadSuppliers();await loadMatRequests();renderSuppliers();renderMatRequests()}
     else if(s==='tools'){await loadAll();renderTools()}
     else if(s==='acts'){await loadAll();loadActs()}
-    else if(s==='finance')await loadFinance();
+    else if(s==='work-batches'){await loadAll();loadWb()} else if(s==='finance')await loadFinance();
   }catch(e){console.error(e)}
 }
 
@@ -974,6 +994,35 @@ async function sendChat(){
   }
   $('chatTyping').style.display='none'; msgs.scrollTop=msgs.scrollHeight;
 }
+
+
+async function loadWb(){
+  const items = await api('/work-batches/');
+  $('wbList').innerHTML = items.length ? `<table><thead><tr><th>Дата</th><th>Объект</th><th>Название</th><th>Работ</th><th>Подрядчиков</th><th>Статус</th><th></th></tr></thead><tbody>${items.map(b=>`<tr><td>${b.created_at}</td><td>${esc(b.object_name)}</td><td><b>${esc(b.name)}</b></td><td>${(b.items||[]).length}</td><td>${(b.contractors||[]).length}</td><td>${badge(b.status)}</td><td class="btn-group"><button class="btn btn-sm btn-red" onclick="delWb(${b.id})">×</button></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Нет заявок</div>';
+}
+function openWbModal(){
+  $('wbObj').innerHTML='<option value="">Объект</option>'+D.objects.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');
+  $('wbConts').innerHTML=D.contractors.map(c=>`<label class="checkbox-item"><input type="checkbox" value="${c.id}"><div class="item-info"><div class="item-name">${esc(c.name)}</div></div></label>`).join('');
+  $('wbName').value='';$('wbNotes').value='';$('wbItems').innerHTML='<p style="color:var(--sec)">Выбери объект</p>';
+  openM('wbModal');
+}
+async function loadWbItems(){
+  const oid=$('wbObj').value;if(!oid)return;
+  const obj=D.objects.find(o=>o.id===+oid);if(!obj)return;
+  const all=[];(obj.estimates||[]).forEach(e=>(e.items||[]).forEach(i=>all.push(i)));
+  $('wbItems').innerHTML=all.map(i=>`<label class="checkbox-item"><input type="checkbox" class="wb-chk" value="${i.id}" data-n="${esc(i.name)}" data-u="${esc(i.unit)}" data-q="${i.quantity}"><div class="item-info"><div class="item-name">${esc(i.name)}</div><div class="item-details">${esc(i.unit)} × ${i.quantity}</div></div></label>`).join('');
+}
+async function saveWb(){
+  const oid=+$('wbObj').value;if(!oid){notify('Выбери объект',false);return;}
+  const items=[];document.querySelectorAll('.wb-chk:checked').forEach(cb=>items.push({estimate_item_id:+cb.value,name:cb.dataset.n,unit:cb.dataset.u,quantity:+cb.dataset.q}));
+  if(!items.length){notify('Выбери работы',false);return;}
+  const cids=[];document.querySelectorAll('#wbConts input:checked').forEach(cb=>cids.push(+cb.value));
+  if(!cids.length){notify('Выбери подрядчиков',false);return;}
+  await api('/work-batches/','POST',{object_id:oid,name:$('wbName').value||undefined,scheduled_at:$('wbTime').value||null,notes:$('wbNotes').value,items,contractor_ids:cids});
+  closeM('wbModal');notify('Заявка создана!');loadWb();
+}
+async function delWb(id){if(!confirm('Удалить?'))return;await api(`/work-batches/${id}`,'DELETE');notify('Удалено');loadWb();}
+$('wbObj').addEventListener('change',loadWbItems);
 
 // INIT
 document.addEventListener('DOMContentLoaded',async()=>{try{await Promise.all([loadDashboard(),loadAll()])}catch(e){console.error(e)}});

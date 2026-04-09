@@ -552,3 +552,22 @@ class ActListItem(BaseModel):
     signed_at: Optional[str] = None
     class Config:
         from_attributes = True
+# ===== ЗАЯВКИ НА РАБОТЫ =====
+class WorkBatchItemCreate(BaseModel):
+    estimate_item_id: Optional[int] = None
+    name: str
+    unit: str = "шт"
+    quantity: float = 1
+
+class WorkBatchCreate(BaseModel):
+    object_id: int
+    name: Optional[str] = None
+    scheduled_at: Optional[str] = None
+    notes: Optional[str] = None
+    items: List[WorkBatchItemCreate] = []
+    contractor_ids: List[int] = []
+
+class TelegramUserCreate(BaseModel):
+    contractor_id: Optional[int] = None
+    telegram_id: str
+    telegram_username: Optional[str] = None

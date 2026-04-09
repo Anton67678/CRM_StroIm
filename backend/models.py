@@ -43,6 +43,7 @@ class Object(Base):
     extra_works = relationship("ExtraWork", back_populates="object", cascade="all, delete-orphan")
     material_requests = relationship("MaterialRequest", back_populates="object", cascade="all, delete-orphan")
     acts = relationship("Act", back_populates="object", cascade="all, delete-orphan")
+    work_batches = relationship("WorkBatch", back_populates="object", cascade="all, delete-orphan")
 
 
 # ============================================================
@@ -205,6 +206,60 @@ class ExtraWork(Base):
 # ============================================================
 # MATERIALS (Справочник материалов)
 # ============================================================
+
+# ============================================================
+# WORK BATCHES (Заявки на работы)
+# ============================================================
+class WorkBatch(Base):
+    __tablename__ = "work_batches"
+    id = Column(Integer, primary_key=True, index=True)
+    object_id = Column(Integer, ForeignKey("objects.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, default="")
+    status = Column(String, default="draft")
+    scheduled_at = Column(String, nullable=True)
+    sent_at = Column(String, nullable=True)
+    notes = Column(Text, default="")
+    created_at = Column(String, default="")
+    object = relationship("Object", back_populates="work_batches")
+    items = relationship("WorkBatchItem", back_populates="batch", cascade="all, delete-orphan")
+    contractors = relationship("WorkBatchContractor", back_populates="batch", cascade="all, delete-orphan")
+
+class WorkBatchItem(Base):
+    __tablename__ = "work_batch_items"
+    id = Column(Integer, primary_key=True, index=True)
+    batch_id = Column(Integer, ForeignKey("work_batches.id", ondelete="CASCADE"), nullable=False)
+    estimate_item_id = Column(Integer, ForeignKey("estimate_items.id", ondelete="SET NULL"), nullable=True)
+    name = Column(String, nullable=False)
+    unit = Column(String, default="")
+    quantity = Column(Float, default=0)
+    description = Column(Text, default="")
+    batch = relationship("WorkBatch", back_populates="items")
+    estimate_item = relationship("EstimateItem")
+
+class WorkBatchContractor(Base):
+    __tablename__ = "work_batch_contractors"
+    id = Column(Integer, primary_key=True, index=True)
+    batch_id = Column(Integer, ForeignKey("work_batches.id", ondelete="CASCADE"), nullable=False)
+    contractor_id = Column(Integer, ForeignKey("contractors.id", ondelete="CASCADE"), nullable=False)
+    status = Column(String, default="pending")
+    sent_at = Column(String, nullable=True)
+    responded_at = Column(String, nullable=True)
+    response_message = Column(Text, default="")
+    response_price = Column(Float, nullable=True)
+    batch = relationship("WorkBatch", back_populates="contractors")
+    contractor = relationship("Contractor")
+
+class TelegramUser(Base):
+    __tablename__ = "telegram_users"
+    id = Column(Integer, primary_key=True, index=True)
+    contractor_id = Column(Integer, ForeignKey("contractors.id", ondelete="CASCADE"), nullable=True)
+    telegram_id = Column(String, nullable=False, unique=True)
+    telegram_username = Column(String, default="")
+    first_name = Column(String, default="")
+    last_name = Column(String, default="")
+    created_at = Column(String, default="")
+    contractor = relationship("Contractor")
+
 class Material(Base):
     __tablename__ = "materials"
     id = Column(Integer, primary_key=True, index=True)
